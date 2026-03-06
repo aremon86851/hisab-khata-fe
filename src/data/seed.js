@@ -1,0 +1,90 @@
+export const SEED = {
+  shops: [
+    {
+      id: 'shop1',
+      name: 'রহিম স্টোর',
+      owner: 'আব্দুর রহিম',
+      mobile: '01711111111',
+      location: 'Mirpur-10, Dhaka',
+      emoji: '🏪',
+      rating: 4.5,
+      products: [
+        { id: 'p1', name: 'চাল',         price: 65,  unit: 'কেজি',  emoji: '🌾', stock: 200 },
+        { id: 'p2', name: 'ডাল',         price: 120, unit: 'কেজি',  emoji: '🫘', stock: 50  },
+        { id: 'p3', name: 'সরিষার তেল', price: 180, unit: 'লিটার', emoji: '🫙', stock: 30  },
+        { id: 'p4', name: 'চিনি',        price: 130, unit: 'কেজি',  emoji: '🍬', stock: 80  },
+        { id: 'p5', name: 'আটা',         price: 55,  unit: 'কেজি',  emoji: '🌾', stock: 100 },
+        { id: 'p6', name: 'লবণ',         price: 40,  unit: 'কেজি',  emoji: '🧂', stock: 60  },
+      ],
+    },
+    {
+      id: 'shop2',
+      name: 'করিম মেডিকেল',
+      owner: 'করিম উদ্দিন',
+      mobile: '01822222222',
+      location: 'Dhanmondi, Dhaka',
+      emoji: '💊',
+      rating: 4.2,
+      products: [
+        { id: 'p7', name: 'Paracetamol', price: 5,  unit: 'পিস', emoji: '💊', stock: 500 },
+        { id: 'p8', name: 'Antacid',     price: 8,  unit: 'পিস', emoji: '🩺', stock: 200 },
+        { id: 'p9', name: 'Vitamin C',   price: 12, unit: 'পিস', emoji: '🍊', stock: 150 },
+      ],
+    },
+  ],
+
+  shopkeepers: [
+    { id: 'sk1', shopId: 'shop1', mobile: '01711111111', pin: '0000' },
+    { id: 'sk2', shopId: 'shop2', mobile: '01822222222', pin: '1111' },
+  ],
+
+  customers: [
+    {
+      id: 'cust1',
+      name: 'সাবিনা আক্তার',
+      mobile: '01912345678',
+      pin: '1234',
+      shopBalances: { shop1: 1850, shop2: 450 },
+      ratings: { shop1: 4, shop2: 5 },
+    },
+    {
+      id: 'cust2',
+      name: 'করিম মিয়া',
+      mobile: '01511111111',
+      pin: '5678',
+      shopBalances: { shop1: 3200 },
+      ratings: { shop1: 2 },
+    },
+    {
+      id: 'cust3',
+      name: 'রেহানা বেগম',
+      mobile: '01611111111',
+      pin: '2222',
+      shopBalances: { shop1: 0 },
+      ratings: { shop1: 5 },
+    },
+    {
+      id: 'cust4',
+      name: 'আবুল হোসেন',
+      mobile: '01311111111',
+      pin: '3333',
+      shopBalances: { shop1: 650, shop2: 200 },
+      ratings: { shop1: 3 },
+    },
+  ],
+
+  transactions: [
+    { id: 't1',  shopId: 'shop1', customerId: 'cust1', type: 'baki',    amount: 500,  note: 'চাল ৫ কেজি',       date: 'আজ ১০:২৩',      ts: Date.now() - 1000    },
+    { id: 't2',  shopId: 'shop1', customerId: 'cust1', type: 'baki',    amount: 350,  note: 'সরিষার তেল',       date: 'গতকাল ১৬:০০',   ts: Date.now() - 90000   },
+    { id: 't3',  shopId: 'shop1', customerId: 'cust1', type: 'payment', amount: 200,  note: 'পরিশোধ',           date: '২ দিন আগে',      ts: Date.now() - 180000  },
+    { id: 't4',  shopId: 'shop1', customerId: 'cust1', type: 'baki',    amount: 1200, note: 'বিভিন্ন মালামাল', date: '৩ দিন আগে',      ts: Date.now() - 270000  },
+    { id: 't5',  shopId: 'shop2', customerId: 'cust1', type: 'baki',    amount: 450,  note: 'ওষুধ',             date: 'আজ ০৯:০০',       ts: Date.now() - 3600    },
+    { id: 't6',  shopId: 'shop1', customerId: 'cust2', type: 'baki',    amount: 800,  note: 'মাছ ২ কেজি',       date: 'আজ ০৮:৩০',       ts: Date.now() - 5000    },
+    { id: 't7',  shopId: 'shop1', customerId: 'cust2', type: 'baki',    amount: 1200, note: 'মুদি মাল',         date: 'গতকাল',          ts: Date.now() - 95000   },
+    { id: 't8',  shopId: 'shop1', customerId: 'cust2', type: 'baki',    amount: 1200, note: 'মাংস + তেল',       date: '৪ দিন আগে',      ts: Date.now() - 360000  },
+    { id: 't9',  shopId: 'shop1', customerId: 'cust3', type: 'baki',    amount: 600,  note: 'ডাল, তেল, চিনি',  date: 'গতকাল',          ts: Date.now() - 100000  },
+    { id: 't10', shopId: 'shop1', customerId: 'cust3', type: 'payment', amount: 600,  note: 'পুরো টাকা পরিশোধ',date: 'আজ ০৯:১৫',       ts: Date.now() - 4000    },
+    { id: 't11', shopId: 'shop1', customerId: 'cust4', type: 'baki',    amount: 650,  note: 'লবণ, মরিচ, হলুদ', date: 'আজ ১১:০০',       ts: Date.now() - 2000    },
+    { id: 't12', shopId: 'shop2', customerId: 'cust4', type: 'baki',    amount: 200,  note: 'Paracetamol x20', date: 'গতকাল',          ts: Date.now() - 86000   },
+  ],
+}
