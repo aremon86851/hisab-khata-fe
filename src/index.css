@@ -3,22 +3,14 @@
 @tailwind utilities;
 
 @layer base {
-  * {
-    -webkit-tap-highlight-color: transparent;
-    box-sizing: border-box;
-  }
-
+  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
   body {
     font-family: 'Baloo Da 2', sans-serif;
     overscroll-behavior: none;
     background-color: #0f172a;
     color: #f1f5f9;
   }
-
-  input, select, textarea, button {
-    font-family: 'Baloo Da 2', sans-serif;
-  }
-
+  input, select, textarea, button { font-family: 'Baloo Da 2', sans-serif; }
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
@@ -26,16 +18,9 @@
 
 @layer utilities {
   .safe-top    { padding-top: env(safe-area-inset-top, 0px); }
-  .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 16px); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 12px); }
   .font-mono   { font-family: 'JetBrains Mono', monospace; }
-
-  /* Desktop sidebar width helpers */
-  .sidebar-width { width: 260px; }
-  .content-with-sidebar { margin-left: 260px; }
 }
 
-/* Calc key press animation */
-.calc-key:active {
-  transform: scale(0.91);
-  filter: brightness(0.85);
-}
+.calc-key { transition: transform 0.08s, filter 0.08s; }
+.calc-key:active { transform: scale(0.91); filter: brightness(0.85); }

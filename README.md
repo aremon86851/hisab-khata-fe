@@ -1,39 +1,35 @@
-# 📒 HisabKhata — হিসাবখাতা
+# HisabKhata Frontend
 
-Smart Baki (Credit) Management Platform for Shops & Customers in Bangladesh/Asia.
+React + Vite + TypeScript + TailwindCSS + React Query
 
 ---
 
-## 🚀 Setup (VS Code তে চালানো)
+## 🚀 Setup
 
 ```bash
-# 1. Dependencies install করুন
+# 1. Install dependencies
 npm install
 
-# 2. Dev server চালু করুন
+# 2. Create .env file
+cp .env.example .env
+# Edit .env — set VITE_API_URL to your backend URL
+
+# 3. Run dev server
 npm run dev
-
-# 3. Browser এ খুলুন
-# http://localhost:5173
+# → http://localhost:5173
 ```
-
----
-
-## 📱 PWA Install (Mobile App)
-
-Chrome mobile এ open করলে address bar এ "Install" আসবে।  
-অথবা: **Share → Add to Home Screen** (iOS Safari)
 
 ---
 
 ## 🔑 Demo Credentials
 
-| Role        | Mobile          | PIN    |
-|-------------|-----------------|--------|
-| 🏪 Shopkeeper (রহিম স্টোর)   | `01711111111`   | `0000` |
-| 🏪 Shopkeeper (করিম মেডিকেল) | `01822222222`   | `1111` |
-| 👤 Customer (সাবিনা আক্তার)   | `01912345678`   | `1234` |
-| 👤 Customer (করিম মিয়া)       | `01511111111`   | `5678` |
+| Role | Mobile / Email | PIN / Password |
+|------|----------------|----------------|
+| 🏪 Shopkeeper | 01711111111 | PIN: 0000 |
+| 🏪 Shopkeeper | 01822222222 | PIN: 1111 |
+| 👤 Customer   | 01912345678 | PIN: 1234 |
+| 👤 Customer   | 01511111111 | PIN: 5678 |
+| 🛡️ Admin      | admin@hisabkhata.com | admin123 |
 
 ---
 
@@ -41,56 +37,64 @@ Chrome mobile এ open করলে address bar এ "Install" আসবে।
 
 ```
 src/
-├── components/
-│   ├── shared/           # Reusable: Toast, StatCard, StarRating, TransactionItem, BakiChip, ProductCard
-│   ├── layout/           # DesktopSidebar, MobileHeader, MobileBottomNav
-│   ├── shopkeeper/       # CustomerRow, CalcKeypad, AddCustomerForm, AddProductForm
-│   └── customer/         # ShopBakiCard, ReputationBadge
-│
-├── pages/
-│   ├── shopkeeper/       # SKDashboard, SKCalculator, SKCustomers, SKProducts
-│   ├── customer/         # CustHome, CustShops, CustProfile
-│   └── LoginPage.jsx
-│
-├── context/
-│   └── AppContext.jsx    # Global state (useReducer)
+├── api/
+│   ├── axios.ts          # Axios instances + interceptors + auto token refresh
+│   └── index.ts          # All API functions (auth, shop, customer, transaction...)
 │
 ├── hooks/
-│   ├── useCalculator.js  # Calculator logic
-│   └── useToast.js       # Toast notifications
+│   └── useAuth.tsx       # Auth context — login, logout, role, token
 │
-├── utils/
-│   └── helpers.js        # taka(), reputationScore(), repLabel(), stars()
+├── components/
+│   ├── shared/index.tsx  # Spinner, Toast, StatCard, BakiChip, StarRating,
+│   │                     # TransactionItem, ProductCard, EmptyState,
+│   │                     # Input, Button, Modal, PinInput, Toggle
+│   └── layout/
+│       └── AppShell.tsx  # Desktop sidebar + mobile bottom nav + header
 │
-├── data/
-│   └── seed.js           # Demo data
+├── pages/
+│   ├── auth/
+│   │   ├── LoginPage.tsx  # Role selection + PIN/password + admin login
+│   │   └── SignupPage.tsx # 4-step signup: role → form → OTP → PIN
+│   ├── shopkeeper/
+│   │   └── index.tsx     # ALL shopkeeper pages:
+│   │                     #   Dashboard, Calculator, Customers, Products,
+│   │                     #   Reminders, Income/Expense, Staff, Notifications, Settings
+│   ├── customer/
+│   │   └── index.tsx     # ALL customer pages: Home, Shops, Profile
+│   └── admin/
+│       └── index.tsx     # ALL admin pages:
+│                         #   Dashboard, Shops, Verifications, Customers, Transactions
 │
-├── ShopkeeperShell.jsx   # Shopkeeper layout orchestrator
-├── CustomerShell.jsx     # Customer layout orchestrator
-└── App.jsx               # Root router
+├── types/index.ts        # All TypeScript types
+├── utils/helpers.ts      # taka(), relativeTime(), getApiError(), repLabel()
+├── App.tsx               # Routes + ProtectedRoute
+└── main.tsx              # Entry — QueryClient + AuthProvider + BrowserRouter
 ```
 
 ---
 
-## 📐 Responsive Design
+## 🌐 API Integration
 
-| Screen         | Layout                                   |
-|----------------|------------------------------------------|
-| Mobile (`<md`) | Bottom nav + top header                  |
-| Desktop (`md+`) | Left sidebar (260px) + top bar with stats |
+All APIs are in `src/api/index.ts`:
+- `authApi`       — signup, OTP, PIN, login, profile
+- `shopApi`       — shop info, verification
+- `customerApi`   — add customer, list, rate, block
+- `transactionApi`— add baki/payment, list, monthly summary
+- `productApi`    — CRUD products
+- `reminderApi`   — send WhatsApp/SMS, history, settings
+- `ieApi`         — income/expense entries, monthly summary
+- `staffApi`      — add/manage staff + permissions
+- `notifApi`      — notifications, mark read
+- `adminApi`      — full platform control
+
+Token is stored in `localStorage` and auto-attached via Axios interceptor.
+On 401 error, auto-refresh token is attempted.
 
 ---
 
-## ✨ Features
+## 📱 Responsive
 
-**দোকানদার:**
-- Dashboard with stats
-- Calculator view — customer select → বাকি যোগ / পরিশোধ
-- Customer management with star rating
-- Product catalogue
-
-**Customer:**
-- Total baki overview
-- Per-shop transaction history
-- Product browsing
-- Reputation score (auto-calculated)
+| Screen | Layout |
+|--------|--------|
+| Mobile (`< md`) | Bottom navigation + top header |
+| Desktop (`≥ md`) | Left sidebar (256px) + top bar |
