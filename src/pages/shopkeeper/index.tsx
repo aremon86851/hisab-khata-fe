@@ -57,7 +57,7 @@ export default function ShopkeeperApp() {
 // ═══════════════════════════════════════════════════════
 function SKDashboard({ onOpenCalc }: { onOpenCalc:(id:string)=>void }) {
   const { data:cr, isLoading } = useQuery({ queryKey:['shopCustomers'], queryFn:()=>customerApi.getCustomers({limit:100}) });
-  const { data:sr } = useQuery({ queryKey:['monthlySummary'], queryFn:transactionApi.getMonthlySummary });
+  const { data:sr }:any = useQuery({ queryKey:['monthlySummary'], queryFn:transactionApi.getMonthlySummary as any });
 
   const customers = (cr?.data as any)?.data || [];
   const s         = (sr?.data as any)?.data;
@@ -362,7 +362,7 @@ function SKProducts() {
   const [form,setForm]=useState({name:'',price:'',unit:'কেজি',emoji:'📦',category:''});
   const [err,setErr]=useState('');
   const EMOJIS=['🌾','🫘','🫙','🍬','🧂','🥩','🥦','💊','🍊','📱','👔','🍞','📦'];
-  const { data, isLoading } = useQuery({ queryKey:['products'], queryFn:productApi.getProducts });
+  const { data, isLoading }:any = useQuery({ queryKey:['products'], queryFn:productApi.getProducts as any });
   const addMut = useMutation({
     mutationFn:()=>productApi.addProduct({...form,price:Number(form.price)}),
     onSuccess:()=>{ qc.invalidateQueries({queryKey:['products']}); setShowAdd(false); setForm({name:'',price:'',unit:'কেজি',emoji:'📦',category:''}); },

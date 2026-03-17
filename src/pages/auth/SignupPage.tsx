@@ -21,7 +21,7 @@ export default function SignupPage() {
   const [pin,        setPin]       = useState('');
   const [pinConfirm, setPinConfirm]= useState('');
   const [tempToken,  setTempToken] = useState('');
-  const [error,      setError]     = useState('');
+  const [error,      setError]     = useState<any>('');
   const { login }   = useAuth();
   const navigate    = useNavigate();
 
@@ -141,7 +141,7 @@ export default function SignupPage() {
                 ))}
               </div>
               {error && <p className="text-red-400 text-xs bg-red-950/50 rounded-lg px-3 py-2">{error}</p>}
-              <Button onClick={()=>{setError();otpMut.mutate();}} loading={otpMut.isPending} className="w-full" disabled={otp.length<6}>যাচাই করুন ✓</Button>
+              <Button onClick={()=>{setError("");otpMut.mutate();}} loading={otpMut.isPending} className="w-full" disabled={otp.length<6}>যাচাই করুন ✓</Button>
               <p className="text-center text-slate-500 text-xs">
                 OTP আসেনি? <button className="text-teal-400 hover:underline" onClick={handleRegister}>পুনরায় পাঠান</button>
               </p>
