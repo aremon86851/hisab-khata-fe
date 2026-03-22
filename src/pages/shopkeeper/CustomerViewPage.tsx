@@ -168,7 +168,7 @@ const CustomerViewPage = () => {
           open={isOpenReminder}
           onClose={() => setIsOpenRemainder(false)}
         >
-          <ReminderModal />
+          <ReminderModal customer={customer} />
         </Modal>
       )}
     </div>

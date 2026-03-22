@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { MessageCircle, Smartphone, Phone } from "lucide-react";
 
-export default function ReminderModal() {
+export default function ReminderModal({ customer }: any) {
   const [method, setMethod] = useState("whatsapp");
   const [isEditing, setIsEditing] = useState(false);
 
-  const phone = "8801313236929"; // بدون + (important)
+  const phone = customer.mobile || "";
 
   const [message, setMessage] = useState(
-    "আসসালামু আলাইকুম, আপনার বাকি আছে ৳৮৮০ টাকা। অনুগ্রহ করে পরিশোধ করুন। - HisabKhata",
+    `আসসালামু আলাইকুম, আপনার বাকি আছে ${customer.balance || ""} টাকা। অনুগ্রহ করে পরিশোধ করুন। - HisabKhata`,
   );
 
   const [tempMessage, setTempMessage] = useState(message);
