@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
+// const BASE = 'https://be-hisabkhata.vercel.app/api/v1';
 
 export const axiosPublic = axios.create({ baseURL: BASE, withCredentials: true });
 
