@@ -7,11 +7,14 @@ export default function ReminderModal({ customer }: any) {
   const ssc = localStorage.getItem("ssc");
   const [isEditing, setIsEditing] = useState(false);
 
-  const phone = customer.mobile || "";
+  const phone = customer?.customer?.mobile || "";
   const customerTransactionViewUrl = `${config.frontendUrl}/txn/${ssc}/${customer?.customer?.shortCode}`;
 
   const [message, setMessage] = useState(
-    `আসসালামু আলাইকুম, আপনার বাকি আছে ${customer.balance || ""} টাকা। অনুগ্রহ করে পরিশোধ করুন। - HisabKhata. আপনার সকল হিসাব দেখতে এই লিঙ্কে ক্লিক করুন`,
+    `আসসালামু আলাইকুম, আপনার বাকি আছে ${customer.balance || ""} টাকা। অনুগ্রহ করে পরিশোধ করুন। - HisabKhata. 
+    
+    আপনার সকল হিসাব দেখতে এই লিঙ্কে ক্লিক করুন:
+    ${customerTransactionViewUrl}`,
   );
 
   const [tempMessage, setTempMessage] = useState(message);
@@ -21,7 +24,7 @@ export default function ReminderModal({ customer }: any) {
   // 👉 Send handler
   const handleSend = () => {
     if (method === "whatsapp") {
-      window.open(`https://wa.me/${phone}?text=${encodedMessage}`, "_blank");
+      window.open(`https://wa.me/+88${phone}?text=${encodedMessage}`, "_blank");
     } else if (method === "sms") {
       window.open(`sms:${phone}?body=${encodedMessage}`);
     } else if (method === "call") {
@@ -115,7 +118,7 @@ export default function ReminderModal({ customer }: any) {
         onInput={(e) => setTempMessage(e.currentTarget.textContent)}
       >
         {message}{" "}
-        <a href={customerTransactionViewUrl}>{customerTransactionViewUrl}</a>
+        {/* <a href={customerTransactionViewUrl}>{customerTransactionViewUrl}</a> */}
       </div>
 
       {/* CTA Button */}
