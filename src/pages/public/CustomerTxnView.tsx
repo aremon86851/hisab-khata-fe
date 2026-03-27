@@ -90,7 +90,11 @@ const CustomerTxnView = () => {
 
                 <div>
                   <p className="text-sm font-medium">
-                    {(txn?.note ?? txn?.type === "BAKI") ? "বাকি" : "পরিশোধ"}
+                    {txn?.note
+                      ? txn?.note
+                      : txn?.type === "BAKI"
+                        ? "বাকি"
+                        : "পরিশোধ"}
                   </p>
                   <p className="text-xs text-slate-400">
                     {formatDateTimeBn(txn?.createdAt)}
