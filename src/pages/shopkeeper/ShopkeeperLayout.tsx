@@ -45,6 +45,7 @@ export default function ShopkeeperLayout() {
     );
 
   const shop = (shopRes?.data as any)?.data;
+  localStorage.setItem("ssc", shop.shortCode);
   const title = shop?.name || "My Shop";
   const subtitle = shop?.verification?.district || "HisabKhata";
   const emoji = shop?.emoji || "🏪";

@@ -1,6 +1,6 @@
 // ─── তোমার App.tsx — complete routing ────────────────────────────────────────
 
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 
 // Auth
@@ -33,6 +33,7 @@ import AdminVerificationsPage from "./pages/admin/AdminVerificationsPage";
 import AdminCustomersPage from "./pages/admin/AdminCustomersPage";
 import AdminTransactionsPage from "./pages/admin/AdminTransactionsPage";
 import CustomerViewPage from "./pages/shopkeeper/CustomerViewPage";
+import CustomerTxnView from "./pages/public/CustomerTxnView";
 
 // ── Protected Route ───────────────────────────────────────────────────────────
 function ProtectedRoute({
@@ -61,6 +62,7 @@ function HomeRedirect() {
 // ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
   const { isLoggedIn, role } = useAuth();
+  const { sid, cid } = useParams();
 
   const authRedirect = isLoggedIn ? (
     <Navigate
@@ -136,6 +138,7 @@ export default function App() {
       </Route>
 
       {/* Root redirect */}
+      <Route path="/txn/:sid/:cid" element={<CustomerTxnView />} />
       <Route path="/" element={<HomeRedirect />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

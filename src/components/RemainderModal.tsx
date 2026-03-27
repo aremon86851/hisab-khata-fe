@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { MessageCircle, Smartphone, Phone } from "lucide-react";
+import config from "@/config";
 
 export default function ReminderModal({ customer }: any) {
   const [method, setMethod] = useState("whatsapp");
+  const ssc = localStorage.getItem("ssc");
   const [isEditing, setIsEditing] = useState(false);
 
   const phone = customer.mobile || "";
+  const customerTransactionViewUrl = `${config.frontendUrl}/txn/${ssc}/${customer?.customer?.shortCode}`;
 
   const [message, setMessage] = useState(
-    `আসসালামু আলাইকুম, আপনার বাকি আছে ${customer.balance || ""} টাকা। অনুগ্রহ করে পরিশোধ করুন। - HisabKhata`,
+    `আসসালামু আলাইকুম, আপনার বাকি আছে ${customer.balance || ""} টাকা। অনুগ্রহ করে পরিশোধ করুন। - HisabKhata. আপনার সকল হিসাব দেখতে এই লিঙ্কে ক্লিক করুন`,
   );
 
   const [tempMessage, setTempMessage] = useState(message);
@@ -111,7 +114,8 @@ export default function ReminderModal({ customer }: any) {
         // suppressContentEditableWarning={true}
         onInput={(e) => setTempMessage(e.currentTarget.textContent)}
       >
-        {message}
+        {message}{" "}
+        <a href={customerTransactionViewUrl}>{customerTransactionViewUrl}</a>
       </div>
 
       {/* CTA Button */}

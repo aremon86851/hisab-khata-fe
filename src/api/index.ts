@@ -1,3 +1,4 @@
+import axios from "axios";
 import { axiosPrivate, axiosPublic } from "./axios";
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -39,6 +40,8 @@ export const customerApi = {
     axiosPrivate.post("/customers", d),
   getCustomers: (params?: object) => axiosPrivate.get("/customers", { params }),
   getSingleCustomer: (id: string) => axiosPrivate.get(`/customers/${id}`),
+  getCustomerTxn: (sid: string, cid: string) =>
+    axios.get(`${import.meta.env.VITE_API_URL}/customers/txn/${sid}/${cid}`),
   rateCustomer: (id: string, rating: number) =>
     axiosPrivate.patch(`/customers/${id}/rate`, { rating }),
   toggleBlock: (id: string) => axiosPrivate.patch(`/customers/${id}/block`),
@@ -55,6 +58,10 @@ export const transactionApi = {
   }) => axiosPrivate.post("/transactions", d),
   getShopTransactions: (params?: object) =>
     axiosPrivate.get("/transactions", { params }),
+  getCustomerShopTxn: (ssc: string, params?: object) =>
+    axios.get(`${import.meta.env.VITE_API_URL}/transactions/txn/${ssc}`, {
+      params,
+    }),
   getMyTransactions: (params?: object) =>
     axiosPrivate.get("/transactions/my", { params }),
   getMonthlySummary: (year?: number, month?: number) =>
