@@ -2,7 +2,6 @@ import { useParams } from "react-router-dom";
 import { Star, ArrowUpRight, ArrowDownLeft, Loader } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { customerApi, transactionApi } from "@/api";
-import CustomerViewSkeleton from "@/components/CustomerViewSkeleton";
 
 const CustomerTxnView = () => {
   const { sid, cid } = useParams();
@@ -14,8 +13,9 @@ const CustomerTxnView = () => {
   });
 
   const { data: cusTxnR, isLoading: isCusTxnrLoading } = useQuery({
-    queryKey: ["custTxns", cid],
-    queryFn: () => transactionApi.getCustomerShopTxn(sid as string),
+    queryKey: ["custTxns", cid, sid],
+    queryFn: () =>
+      transactionApi.getCustomerShopTxn(sid as string, cid as string),
     enabled: !!cid,
   });
 

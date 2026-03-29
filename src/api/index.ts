@@ -58,10 +58,13 @@ export const transactionApi = {
   }) => axiosPrivate.post("/transactions", d),
   getShopTransactions: (params?: object) =>
     axiosPrivate.get("/transactions", { params }),
-  getCustomerShopTxn: (ssc: string, params?: object) =>
-    axios.get(`${import.meta.env.VITE_API_URL}/transactions/txn/${ssc}`, {
-      params,
-    }),
+  getCustomerShopTxn: (ssc: string, csc: string, params?: object) =>
+    axios.get(
+      `${import.meta.env.VITE_API_URL}/transactions/txn/${ssc}/${csc}`,
+      {
+        params,
+      },
+    ),
   getMyTransactions: (params?: object) =>
     axiosPrivate.get("/transactions/my", { params }),
   getMonthlySummary: (year?: number, month?: number) =>
