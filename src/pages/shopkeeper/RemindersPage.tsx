@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { customerApi, reminderApi } from "../../api";
 import { PageLoader, Button, Modal } from "../../components/shared";
 import { taka, relativeTime, getApiError } from "../../utils/helpers";
@@ -13,6 +13,8 @@ export default function RemindersPage() {
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
   const [sent, setSent] = useState<any>(null);
+
+  const qc = useQueryClient();
 
   const { data: cr } = useQuery({
     queryKey: ["shopCustomers"],
@@ -37,6 +39,7 @@ export default function RemindersPage() {
     onSuccess: ({ data }: any) => {
       setSent(data.data);
       setErr("");
+      qc.invalidateQueries({ queryKey: ["reminderHistory"] });
     },
     onError: (e) => setErr(getApiError(e)),
   });
