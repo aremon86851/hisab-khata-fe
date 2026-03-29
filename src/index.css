@@ -7,13 +7,19 @@
   body {
     font-family: 'Baloo Da 2', sans-serif;
     overscroll-behavior: none;
-    background-color: #0f172a;
+    background-color: #f8fafc;
+    color: #0f172a;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  html.dark body {
+    background-color: #020617;
     color: #f1f5f9;
   }
   input, select, textarea, button { font-family: 'Baloo Da 2', sans-serif; }
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
+  html.dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
 }
 
 @layer utilities {

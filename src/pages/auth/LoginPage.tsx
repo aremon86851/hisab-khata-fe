@@ -63,18 +63,22 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-teal-950 to-slate-950 flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50 to-slate-50 dark:from-slate-950 dark:via-teal-950 dark:to-slate-950 flex flex-col items-center justify-center p-6">
       <div className="mb-8 text-center animate-bounce-in">
         <div className="text-7xl mb-3">📒</div>
-        <h1 className="text-3xl font-extrabold text-white">HisabKhata</h1>
-        <p className="text-teal-400 text-sm mt-1">
+        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">
+          HisabKhata
+        </h1>
+        <p className="text-teal-600 dark:text-teal-400 text-sm mt-1">
           হিসাবখাতা — Smart Baki Management
         </p>
       </div>
 
       {!pageRole ? (
         <div className="w-full max-w-sm animate-slide-up">
-          <p className="text-center text-slate-400 text-sm mb-5">আপনি কে?</p>
+          <p className="text-center text-slate-600 dark:text-slate-400 text-sm mb-5">
+            আপনি কে?
+          </p>
           <div className="grid grid-cols-2 gap-4 mb-4">
             {[
               {
@@ -93,17 +97,21 @@ export default function LoginPage() {
               <button
                 key={r}
                 onClick={() => setPageRole(r)}
-                className="bg-slate-800/80 border border-slate-700 hover:border-teal-500 rounded-2xl p-6 text-center transition-all hover:scale-105 active:scale-95"
+                className="bg-white dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 hover:border-teal-500 rounded-2xl p-6 text-center transition-all hover:scale-105 active:scale-95 shadow-sm dark:shadow-none"
               >
                 <div className="text-4xl mb-2">{icon}</div>
-                <div className="text-white font-bold text-base">{label}</div>
-                <div className="text-slate-400 text-xs mt-1">{sub}</div>
+                <div className="text-slate-900 dark:text-white font-bold text-base">
+                  {label}
+                </div>
+                <div className="text-slate-500 dark:text-slate-400 text-xs mt-1">
+                  {sub}
+                </div>
               </button>
             ))}
           </div>
           <button
             onClick={() => setPageRole("admin")}
-            className="w-full text-slate-500 hover:text-slate-300 text-xs py-2 transition-colors"
+            className="w-full text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs py-2 transition-colors"
           >
             🛡️ Admin Login
           </button>
@@ -116,11 +124,11 @@ export default function LoginPage() {
               setError("");
               setPin("");
             }}
-            className="flex items-center gap-1 text-slate-400 hover:text-white text-sm mb-5 transition-colors"
+            className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-sm mb-5 transition-colors"
           >
             ← পিছনে
           </button>
-          <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-6">
+          <div className="bg-white dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-2xl p-6 shadow-xl dark:shadow-none">
             <div className="flex items-center gap-3 mb-5">
               <span className="text-3xl">
                 {pageRole === "shopkeeper"
@@ -130,14 +138,16 @@ export default function LoginPage() {
                     : "🛡️"}
               </span>
               <div>
-                <div className="text-white font-bold">
+                <div className="text-slate-900 dark:text-white font-bold">
                   {pageRole === "shopkeeper"
                     ? "দোকানদার Login"
                     : pageRole === "customer"
                       ? "Customer Login"
                       : "Admin Login"}
                 </div>
-                <div className="text-slate-400 text-xs">আপনার তথ্য দিন</div>
+                <div className="text-slate-500 dark:text-slate-400 text-xs">
+                  আপনার তথ্য দিন
+                </div>
               </div>
             </div>
 
@@ -173,7 +183,7 @@ export default function LoginPage() {
                       <button
                         key={m}
                         onClick={() => setMode(m)}
-                        className={`px-3 py-1.5 rounded-lg transition-colors ${mode === m ? "bg-teal-600 text-white" : "text-slate-400 border border-slate-700"}`}
+                        className={`px-3 py-1.5 rounded-lg transition-colors ${mode === m ? "bg-teal-600 text-white" : "text-slate-500 dark:text-slate-400 border border-gray-300 dark:border-slate-700"}`}
                       >
                         {m === "pin" ? "PIN" : "Password"}
                       </button>
@@ -195,7 +205,7 @@ export default function LoginPage() {
             )}
 
             {error && (
-              <div className="mt-3 text-red-400 text-xs bg-red-950/50 rounded-lg px-3 py-2">
+              <div className="mt-3 text-red-600 dark:text-red-400 text-xs bg-red-100 dark:bg-red-950/50 rounded-lg px-3 py-2">
                 {error}
               </div>
             )}
@@ -212,18 +222,18 @@ export default function LoginPage() {
               লগইন করুন →
             </Button>
 
-            <div className="mt-4 pt-4 border-t border-slate-700 space-y-2 text-center">
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-slate-700 space-y-2 text-center">
               {pageRole !== "admin" && (
                 <Link
                   to="/signup"
-                  className="block text-teal-400 text-xs hover:underline"
+                  className="block text-teal-600 dark:text-teal-400 text-xs hover:underline"
                 >
                   নতুন account? এখনই যোগ দিন →
                 </Link>
               )}
               <button
                 onClick={() => navigate("/forgot-pin")}
-                className="text-slate-500 text-xs hover:text-slate-300"
+                className="text-slate-500 text-xs hover:text-slate-700 dark:hover:text-slate-300"
               >
                 PIN ভুলে গেছেন?
               </button>

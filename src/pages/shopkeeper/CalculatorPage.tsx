@@ -17,10 +17,12 @@ const OPS = new Set(["÷", "×", "−", "+", "%"]);
 
 const keyStyle = (k: string) => {
   if (k === "AC") return "bg-red-950 text-red-400 text-sm font-bold";
-  if (k === "⌫") return "bg-slate-700 text-slate-300 text-sm";
-  if (OPS.has(k)) return "bg-teal-900/80 text-teal-300 text-xl font-bold";
+  if (k === "⌫")
+    return "bg-gray-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm";
+  if (OPS.has(k))
+    return "bg-teal-100 dark:bg-teal-900/80 text-teal-700 dark:text-teal-300 text-xl font-bold";
   if (k === "=") return "bg-teal-600 text-white text-xl font-bold";
-  return "bg-slate-800 text-white text-xl font-bold";
+  return "bg-gray-100 dark:bg-slate-800 text-slate-900 dark:text-white text-xl font-bold";
 };
 
 export default function CalculatorPage() {
@@ -169,7 +171,7 @@ export default function CalculatorPage() {
           <select
             value={selId}
             onChange={(e) => setSelId(e.target.value)}
-            className="w-full bg-slate-700/60 border border-slate-600 focus:border-teal-500 rounded-xl px-3 py-2.5 text-white text-sm outline-none"
+            className="w-full bg-gray-100 dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600 focus:border-teal-500 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white text-sm outline-none"
           >
             <option value="">— Customer সিলেক্ট করুন —</option>
             {customers.map((c: any) => (
@@ -179,8 +181,10 @@ export default function CalculatorPage() {
             ))}
           </select>
           {customer && (
-            <div className="flex items-center justify-between bg-slate-950/50 rounded-xl px-3 py-2">
-              <span className="text-xs text-slate-400">বর্তমান বাকি</span>
+            <div className="flex items-center justify-between bg-gray-100 dark:bg-slate-950/50 rounded-xl px-3 py-2">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                বর্তমান বাকি
+              </span>
               <span
                 className={`font-mono text-xl font-bold ${customer.balance > 0 ? "text-red-400" : "text-teal-400"}`}
               >
@@ -190,9 +194,11 @@ export default function CalculatorPage() {
           )}
         </div>
         {/* Display */}
-        <div className="bg-slate-950 mx-3 mb-3 rounded-xl px-4 py-3 min-h-[68px] flex flex-col items-end justify-center">
+        <div className="bg-gray-200 dark:bg-slate-950 mx-3 mb-3 rounded-xl px-4 py-3 min-h-[68px] flex flex-col items-end justify-center">
           <div className="text-slate-500 text-xs font-mono h-4">{opLbl}</div>
-          <div className="text-white text-3xl font-mono font-bold">{disp}</div>
+          <div className="text-slate-900 dark:text-white text-3xl font-mono font-bold">
+            {disp}
+          </div>
         </div>
         {/* Note */}
         <div className="px-3 pb-3">
@@ -200,7 +206,7 @@ export default function CalculatorPage() {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="📝 নোট (চাল ২ কেজি...)"
-            className="w-full bg-slate-700/60 border border-slate-600 focus:border-teal-500 rounded-xl px-3 py-2 text-white text-sm outline-none placeholder-slate-500"
+            className="w-full bg-gray-100 dark:bg-slate-700/60 border border-gray-300 dark:border-slate-600 focus:border-teal-500 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm outline-none placeholder-slate-400"
           />
         </div>
       </div>
@@ -210,13 +216,13 @@ export default function CalculatorPage() {
         {ROWS.map((row, ri) => (
           <div
             key={ri}
-            className="flex border-b border-slate-700/40 last:border-b-0"
+            className="flex border-b border-gray-200 dark:border-slate-700/40 last:border-b-0"
           >
             {row.map((k) => (
               <button
                 key={k}
                 onClick={() => handleKey(k)}
-                className={`calc-key flex-1 ${k === "0" ? "flex-[2]" : ""} py-[18px] text-center border-r border-slate-700/40 last:border-r-0 select-none ${keyStyle(k)}`}
+                className={`calc-key flex-1 ${k === "0" ? "flex-[2]" : ""} py-[18px] text-center border-r border-gray-200 dark:border-slate-700/40 last:border-r-0 select-none ${keyStyle(k)}`}
               >
                 {k}
               </button>
@@ -253,15 +259,19 @@ export default function CalculatorPage() {
       {confirm && (
         <Modal title="নিশ্চিত করুন?" setConfirm={setConfirm}>
           <div>
-            <div className="bg-slate-800 rounded-xl p-4 mb-4 space-y-2 text-sm">
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 mb-4 space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-slate-400">Customer:</span>
-                <span className="text-white font-semibold">
+                <span className="text-slate-500 dark:text-slate-400">
+                  Customer:
+                </span>
+                <span className="text-slate-900 dark:text-white font-semibold">
                   {customer?.name}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">পরিমাণ:</span>
+                <span className="text-slate-500 dark:text-slate-400">
+                  পরিমাণ:
+                </span>
                 <span
                   className={`font-mono font-bold ${confirm.type === "BAKI" ? "text-red-400" : "text-teal-400"}`}
                 >
@@ -269,22 +279,24 @@ export default function CalculatorPage() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">ধরন:</span>
-                <span className="text-white">
+                <span className="text-slate-500 dark:text-slate-400">ধরন:</span>
+                <span className="text-slate-900 dark:text-white">
                   {confirm.type === "BAKI" ? "বাকি" : "পরিশোধ"}
                 </span>
               </div>
               {note && (
                 <div className="flex justify-between">
-                  <span className="text-slate-400">নোট:</span>
-                  <span className="text-white">{note}</span>
+                  <span className="text-slate-500 dark:text-slate-400">
+                    নোট:
+                  </span>
+                  <span className="text-slate-900 dark:text-white">{note}</span>
                 </div>
               )}
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setConfirm(null)}
-                className="flex-1 py-3 rounded-xl border border-slate-700 text-slate-300 font-semibold text-sm"
+                className="flex-1 py-3 rounded-xl border border-gray-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-sm"
               >
                 বাতিল
               </button>

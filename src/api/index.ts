@@ -144,3 +144,29 @@ export const adminApi = {
   deleteTransaction: (id: string) =>
     axiosPrivate.delete(`/admin/transactions/${id}`),
 };
+export const fraudApi = {
+  // Shopkeeper: check fraud before adding customer
+  checkFraud: (params: { mobile?: string; shortCode?: string }) =>
+    axiosPrivate.get("/fraud/check", { params }),
+
+  // Shopkeeper: get community fraud feed
+  getFeed: (params?: { page?: number; limit?: number }) =>
+    axiosPrivate.get("/fraud/feed", { params }),
+
+  // Shopkeeper: report a customer
+  reportFraud: (data: {
+    customerId: string;
+    type: string;
+    description?: string;
+    amountOwed?: number;
+    isAnonymous?: boolean;
+  }) => axiosPrivate.post("/fraud/report", data),
+
+  // Shopkeeper: vote on a report
+  vote: (reportId: string, agree: boolean) =>
+    axiosPrivate.post(`/fraud/${reportId}/vote`, { agree }),
+
+  // Customer: dispute a report
+  dispute: (reportId: string, reason: string) =>
+    axiosPrivate.post(`/fraud/${reportId}/dispute`, { reason }),
+};

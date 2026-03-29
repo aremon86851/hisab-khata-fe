@@ -33,20 +33,22 @@ export default function ReminderModal({ customer }: any) {
   };
 
   return (
-    <div className="bg-slate-900 text-white space-y-5">
+    <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white space-y-5">
       {/* Title */}
-      <h2 className="text-sm text-slate-400">রিমাইন্ডার মাধ্যম বেছে নিন</h2>
+      <h2 className="text-sm text-slate-500 dark:text-slate-400">
+        রিমাইন্ডার মাধ্যম বেছে নিন
+      </h2>
 
       {/* Options */}
       <div className="flex gap-3">
         {/* WhatsApp */}
         <div
           onClick={() => setMethod("whatsapp")}
-          className={`flex-1 rounded-2xl p-3 text-center relative cursor-pointer transition
+          className={`flex-1 rounded-2xl p-3 text-center relative cursor-pointer transition bg-gray-100 dark:bg-slate-800
           ${
             method === "whatsapp"
-              ? "bg-slate-800 border-2 border-teal-500"
-              : "bg-slate-800"
+              ? "border-2 border-teal-500"
+              : "border-2 border-transparent"
           }`}
         >
           <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px] bg-teal-500 text-black px-2 py-[2px] rounded-full">
@@ -62,11 +64,11 @@ export default function ReminderModal({ customer }: any) {
         {/* SMS */}
         <div
           onClick={() => setMethod("sms")}
-          className={`flex-1 rounded-2xl p-3 text-center cursor-pointer transition
+          className={`flex-1 rounded-2xl p-3 text-center cursor-pointer transition bg-gray-100 dark:bg-slate-800
           ${
             method === "sms"
-              ? "bg-slate-800 border-2 border-teal-500"
-              : "bg-slate-800"
+              ? "border-2 border-teal-500"
+              : "border-2 border-transparent"
           }`}
         >
           <div className="flex flex-col items-center gap-2">
@@ -78,11 +80,11 @@ export default function ReminderModal({ customer }: any) {
         {/* Call */}
         <div
           onClick={() => setMethod("call")}
-          className={`flex-1 rounded-2xl p-3 text-center cursor-pointer transition
+          className={`flex-1 rounded-2xl p-3 text-center cursor-pointer transition bg-gray-100 dark:bg-slate-800
           ${
             method === "call"
-              ? "bg-slate-800 border-2 border-teal-500"
-              : "bg-slate-800"
+              ? "border-2 border-teal-500"
+              : "border-2 border-transparent"
           }`}
         >
           <div className="flex flex-col items-center gap-2">
@@ -94,7 +96,9 @@ export default function ReminderModal({ customer }: any) {
 
       {/* Message Header */}
       <div className="flex justify-between items-center">
-        <p className="text-sm text-slate-400">মেসেজ প্রিভিউ</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          মেসেজ প্রিভিউ
+        </p>
         <button
           onClick={() => {
             // setTempMessage(message);
@@ -111,7 +115,7 @@ export default function ReminderModal({ customer }: any) {
 
       {/* Message Box */}
       <div
-        className={`bg-slate-800 rounded-2xl p-4 text-sm text-slate-200 leading-relaxed ${isEditing ? "border border-white" : ""}`}
+        className={`bg-gray-100 dark:bg-slate-800 rounded-2xl p-4 text-sm text-slate-700 dark:text-slate-200 leading-relaxed ${isEditing ? "border border-teal-500" : ""}`}
         contentEditable={isEditing}
         autoFocus={isEditing}
         // suppressContentEditableWarning={true}
@@ -132,7 +136,7 @@ export default function ReminderModal({ customer }: any) {
       </button>
 
       {/* Footer */}
-      <p className="text-xs text-center text-slate-500">
+      <p className="text-xs text-center text-slate-400 dark:text-slate-500">
         অটোমেটিক মেসেজ পাঠানো চার্জ প্রযোজ্য হতে পারে
       </p>
 

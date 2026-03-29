@@ -6,8 +6,6 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Plus,
-  MessageCircle,
-  Smartphone,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { customerApi, transactionApi } from "@/api";
@@ -60,7 +58,7 @@ const CustomerViewPage = () => {
   }
 
   return (
-    <div className="p-4 space-y-4 bg-slate-900 ">
+    <div className="p-4 space-y-4 bg-gray-50 dark:bg-slate-900 ">
       {/* Card Container */}
       <div className="space-y-4">
         {/* Header */}
@@ -69,10 +67,12 @@ const CustomerViewPage = () => {
             {customer?.customer?.name.charAt(0)}
           </div>
 
-          <h2 className="font-semibold text-lg text-white ">
+          <h2 className="font-semibold text-lg text-slate-900 dark:text-white ">
             {customer?.customer?.name}
           </h2>
-          <p className="text-slate-400 text-sm">{customer?.customer?.mobile}</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">
+            {customer?.customer?.mobile}
+          </p>
 
           {/* Rating */}
           <div className="flex gap-1">
@@ -83,7 +83,7 @@ const CustomerViewPage = () => {
                 className="fill-yellow-400 text-yellow-400"
               />
             ))}
-            <Star size={16} className="text-slate-600" />
+            <Star size={16} className="text-slate-600 dark:text-slate-500" />
           </div>
         </div>
 
@@ -98,14 +98,17 @@ const CustomerViewPage = () => {
         {/* Actions */}
         <div className="flex gap-2">
           <button
-            className="flex items-center justify-center gap-1 flex-1 bg-slate-800 hover:bg-slate-700 rounded-lg py-2 text-sm transition"
+            className="flex items-center justify-center gap-1 flex-1 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white rounded-lg py-2 text-sm transition"
             onClick={() => setIsOpenRemainder(true)}
           >
             <MessageSquare size={16} />
             রিমাইন্ডার
           </button>
 
-          <button className="flex items-center justify-center gap-1 flex-1 bg-slate-800 hover:bg-slate-700 rounded-lg py-2 text-sm transition">
+          <button
+            onClick={() => window.open(`tel:${customer?.mobile}`)}
+            className="flex items-center justify-center gap-1 flex-1 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white rounded-lg py-2 text-sm transition"
+          >
             <Phone size={16} />
             কল
           </button>
@@ -113,8 +116,8 @@ const CustomerViewPage = () => {
 
         {/* Transactions Header */}
         <div className="flex justify-between items-center text-sm font-medium">
-          <span className="text-slate-300">হিসাব খাতা</span>
-          <button className="text-teal-400 hover:text-teal-300">
+          <span className="text-slate-700 dark:text-slate-300">হিসাব খাতা</span>
+          <button className="text-teal-600 dark:text-teal-400 hover:text-teal-500 dark:hover:text-teal-300">
             সব দেখুন
           </button>
         </div>
@@ -123,7 +126,7 @@ const CustomerViewPage = () => {
         <div className="space-y-2">
           {/* Item */}
           {customerTransaction?.map((txn: any) => (
-            <div className="flex justify-between items-center bg-slate-800 rounded-xl p-3">
+            <div className="flex justify-between items-center bg-white dark:bg-slate-800 rounded-xl p-3">
               <div className="flex items-center gap-2">
                 {txn.type === "BAKI" ? (
                   <ArrowUpRight size={18} className="text-red-400" />
@@ -132,7 +135,7 @@ const CustomerViewPage = () => {
                 )}
 
                 <div>
-                  <p className="text-sm font-medium">
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">
                     {(txn?.note ?? txn?.type === "BAKI") ? "বাকি" : "পরিশোধ"}
                   </p>
                   <p className="text-xs text-slate-400">

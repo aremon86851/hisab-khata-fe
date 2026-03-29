@@ -49,20 +49,20 @@ const CustomerTxnView = () => {
   }
 
   return (
-    <div className="p-4 space-y-4 bg-slate-900 ">
+    <div className="p-4 space-y-4 bg-white dark:bg-slate-900 min-h-screen">
       {/* Card Container */}
       <div className="space-y-4">
         {/* Header */}
         <div className="flex justify-between items-center gap-3">
           <div className="flex items-center text-center space-y-2 gap-4">
-            <div className="text-2xl font-bold text-slate-200 flex items-center justify-center rounded-full bg-green-600 w-16 h-16">
+            <div className="text-2xl font-bold text-slate-800 dark:text-slate-200 flex items-center justify-center rounded-full bg-green-600 w-16 h-16">
               {customer?.customer?.name.charAt(0)}
             </div>
             <div>
-              <h2 className="font-semibold text-lg text-white text-left">
+              <h2 className="font-semibold text-lg text-slate-900 dark:text-white text-left">
                 {customer?.customer?.name}
               </h2>
-              <p className="text-slate-400 text-sm">
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
                 {customer?.customer?.mobile}
               </p>
             </div>
@@ -80,7 +80,7 @@ const CustomerTxnView = () => {
         <div className="space-y-2">
           {/* Item */}
           {customerTransaction?.map((txn: any) => (
-            <div className="flex justify-between items-center bg-slate-800 rounded-xl p-3">
+            <div className="flex justify-between items-center bg-gray-100 dark:bg-slate-800 rounded-xl p-3">
               <div className="flex items-center gap-2">
                 {txn.type === "BAKI" ? (
                   <ArrowUpRight size={18} className="text-red-400" />
@@ -89,14 +89,14 @@ const CustomerTxnView = () => {
                 )}
 
                 <div>
-                  <p className="text-sm font-medium">
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">
                     {txn?.note
                       ? txn?.note
                       : txn?.type === "BAKI"
                         ? "বাকি"
                         : "পরিশোধ"}
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     {formatDateTimeBn(txn?.createdAt)}
                   </p>
                 </div>

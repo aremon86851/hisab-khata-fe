@@ -66,7 +66,7 @@ export default function CustomersPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="নাম বা মোবাইল..."
-          className="flex-1 bg-slate-800 border border-slate-700 focus:border-teal-500 rounded-xl px-4 py-2.5 text-white text-sm outline-none"
+          className="flex-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 focus:border-teal-500 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white text-sm outline-none"
         />
         <button
           onClick={() => setShowAdd(true)}
@@ -82,7 +82,7 @@ export default function CustomersPage() {
             key={f}
             onClick={() => setFilter(f)}
             className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all
-              ${filter === f ? "bg-teal-600 text-white border-teal-500" : "border-slate-700 text-slate-400"}`}
+              ${filter === f ? "bg-teal-600 text-white border-teal-500" : "border-gray-300 dark:border-slate-700 text-slate-600 dark:text-slate-400"}`}
           >
             {f === "all" ? "সব" : f === "baki" ? "🔴 বাকি" : "🟢 পরিশোধ"}
           </button>
@@ -96,7 +96,7 @@ export default function CustomersPage() {
           {customers.map((c: any) => (
             <div
               key={c.id}
-              className={`bg-slate-800/60 border border-slate-700/50 rounded-xl p-3 border-l-4
+              className={`bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700/50 rounded-xl p-3 border-l-4
                 ${c.balance > 2000 ? "border-l-red-500" : c.balance > 0 ? "border-l-amber-500" : "border-l-teal-500"}`}
             >
               <div className="flex items-center gap-3">
@@ -105,9 +105,11 @@ export default function CustomersPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <Link to={`/shopkeeper/customer/${c.id}`}>
-                    <div className="text-white font-bold text-sm">{c.name}</div>
+                    <div className="text-slate-900 dark:text-white font-bold text-sm">
+                      {c.name}
+                    </div>
                   </Link>
-                  <div className="text-slate-400 text-xs font-mono">
+                  <div className="text-slate-500 dark:text-slate-400 text-xs font-mono">
                     {c.mobile}
                   </div>
                 </div>
@@ -120,7 +122,7 @@ export default function CustomersPage() {
                   <BakiChip amount={c.balance} />
                 </div>
               </div>
-              <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-slate-700/50">
+              <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-gray-200 dark:border-slate-700/50">
                 <StarRating
                   rating={c.shopRating}
                   interactive
@@ -168,7 +170,9 @@ export default function CustomersPage() {
             type="number"
             placeholder="0"
           />
-          {err && <p className="text-red-400 text-xs">{err}</p>}
+          {err && (
+            <p className="text-red-600 dark:text-red-400 text-xs">{err}</p>
+          )}
           <div className="flex gap-2">
             <Button
               variant="ghost"

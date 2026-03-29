@@ -6,6 +6,7 @@ import { useAuth } from "./hooks/useAuth";
 // Auth
 import LoginPage from "./pages/auth/LoginPage";
 import SignupPage from "./pages/auth/SignupPage";
+import ForgotPinPage from "./pages/auth/ForgotPinPage";
 
 // Shopkeeper
 import ShopkeeperLayout from "./pages/shopkeeper/ShopkeeperLayout";
@@ -34,6 +35,9 @@ import AdminCustomersPage from "./pages/admin/AdminCustomersPage";
 import AdminTransactionsPage from "./pages/admin/AdminTransactionsPage";
 import CustomerViewPage from "./pages/shopkeeper/CustomerViewPage";
 import CustomerTxnView from "./pages/public/CustomerTxnView";
+import ShopVerificationPage from "./pages/shopkeeper/ShopSettings";
+import FraudCheckerPage from "./pages/shopkeeper/FraudCheckerPage";
+import FraudFeedPage from "./pages/shopkeeper/FraudFeedPage";
 
 // ── Protected Route ───────────────────────────────────────────────────────────
 function ProtectedRoute({
@@ -82,6 +86,7 @@ export default function App() {
       {/* Auth */}
       <Route path="/login" element={authRedirect ?? <LoginPage />} />
       <Route path="/signup" element={authRedirect ?? <SignupPage />} />
+      <Route path="/forgot-pin" element={<ForgotPinPage />} />
 
       {/* ── Shopkeeper ── */}
       <Route
@@ -103,6 +108,9 @@ export default function App() {
         <Route path="staff" element={<StaffPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="verification" element={<ShopVerificationPage />} />
+        <Route path="fraud" element={<FraudCheckerPage />} />
+        <Route path="fraud/feed" element={<FraudFeedPage />} />
       </Route>
 
       {/* ── Customer ── */}

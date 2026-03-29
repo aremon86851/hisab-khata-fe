@@ -22,7 +22,8 @@ const SHOP_TYPES = [
 export default function SignupPage() {
   const [step, setStep] = useState<"role" | "form" | "otp" | "pin">("role");
   const [role, setRole] = useState<"shopkeeper" | "customer">("shopkeeper");
-  const [showOtp, setShowOtp] = useState<string>("")
+  const [showOtp, setShowOtp] = useState<string>("");
+  const [isClaiming, setIsClaiming] = useState(false);
   const [shopName, setShopName] = useState("");
   const [shopType, setShopType] = useState("");
   const [name, setName] = useState("");
@@ -40,7 +41,7 @@ export default function SignupPage() {
     mutationFn: () => authApi.shopkeeperSignup({ shopName, mobile, password }),
     onSuccess: (data) => {
       setStep("otp");
-      setShowOtp(data?.data?.data?.message)
+      setShowOtp(data?.data?.data?.message);
       setError("");
     },
     onError: (e) => setError(getApiError(e)),
@@ -49,7 +50,8 @@ export default function SignupPage() {
     mutationFn: () => authApi.customerSignup({ name, mobile }),
     onSuccess: (data) => {
       setStep("otp");
-      setShowOtp(data?.data?.data?.message)
+      setShowOtp(data?.data?.data?.message);
+      setIsClaiming(data?.data?.data?.isClaiming ?? false);
       setError("");
     },
     onError: (e) => setError(getApiError(e)),
@@ -80,10 +82,12 @@ export default function SignupPage() {
   const stepIdx = steps.indexOf(step);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-teal-950 to-slate-950 flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50 to-slate-50 dark:from-slate-950 dark:via-teal-950 dark:to-slate-950 flex flex-col items-center justify-center p-6">
       <div className="mb-6 text-center">
         <div className="text-5xl mb-2">📒</div>
-        <h1 className="text-2xl font-extrabold text-white">HisabKhata</h1>
+        <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
+          HisabKhata
+        </h1>
       </div>
 
       <div className="w-full max-w-sm">
@@ -99,17 +103,19 @@ export default function SignupPage() {
               </div>
               {i < 3 && (
                 <div
-                  className={`w-6 h-px ${stepIdx > i ? "bg-teal-600" : "bg-slate-700"}`}
+                  className={`w-6 h-px ${stepIdx > i ? "bg-teal-600" : "bg-gray-300 dark:bg-slate-700"}`}
                 />
               )}
             </div>
           ))}
         </div>
 
-        <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 animate-slide-up">
+        <div className="bg-white dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-2xl p-6 animate-slide-up shadow-xl dark:shadow-none">
           {step === "role" && (
             <div>
-              <h2 className="text-white font-bold text-lg mb-4">আপনি কে?</h2>
+              <h2 className="text-slate-900 dark:text-white font-bold text-lg mb-4">
+                আপনি কে?
+              </h2>
               <div className="grid grid-cols-2 gap-3 mb-5">
                 {[
                   { r: "shopkeeper" as const, icon: "🏪", label: "দোকানদার" },
@@ -118,10 +124,12 @@ export default function SignupPage() {
                   <button
                     key={r}
                     onClick={() => setRole(r)}
-                    className={`p-4 rounded-xl border-2 text-center transition-all ${role === r ? "border-teal-500 bg-teal-900/30" : "border-slate-700"}`}
+                    className={`p-4 rounded-xl border-2 text-center transition-all ${role === r ? "border-teal-500 bg-teal-100 dark:bg-teal-900/30" : "border-gray-200 dark:border-slate-700"}`}
                   >
                     <div className="text-3xl mb-1">{icon}</div>
-                    <div className="text-white text-sm font-bold">{label}</div>
+                    <div className="text-slate-900 dark:text-white text-sm font-bold">
+                      {label}
+                    </div>
                   </button>
                 ))}
               </div>
@@ -131,7 +139,7 @@ export default function SignupPage() {
               <div className="mt-3 text-center">
                 <Link
                   to="/login"
-                  className="text-slate-500 text-xs hover:text-slate-300"
+                  className="text-slate-500 text-xs hover:text-slate-700 dark:hover:text-slate-300"
                 >
                   ইতিমধ্যে account আছে? লগইন করুন →
                 </Link>
@@ -141,7 +149,7 @@ export default function SignupPage() {
 
           {step === "form" && (
             <div className="space-y-4">
-              <h2 className="text-white font-bold text-lg">
+              <h2 className="text-slate-900 dark:text-white font-bold text-lg">
                 {role === "shopkeeper" ? "🏪 দোকানের তথ্য" : "👤 আপনার তথ্য"}
               </h2>
               {role === "shopkeeper" ? (
@@ -153,7 +161,7 @@ export default function SignupPage() {
                     placeholder="যেমন: রহিম স্টোর"
                   />
                   <div>
-                    <label className="text-xs text-slate-400 font-semibold uppercase tracking-wide block mb-2">
+                    <label className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wide block mb-2">
                       দোকানের ধরন
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -162,7 +170,7 @@ export default function SignupPage() {
                           key={t}
                           onClick={() => setShopType(t)}
                           className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all
-                            ${shopType === t ? "bg-teal-600 text-white border-teal-500" : "border-slate-700 text-slate-400"}`}
+                            ${shopType === t ? "bg-teal-600 text-white border-teal-500" : "border-gray-300 dark:border-slate-700 text-slate-500 dark:text-slate-400"}`}
                         >
                           {t}
                         </button>
@@ -202,7 +210,7 @@ export default function SignupPage() {
                 </>
               )}
               {error && (
-                <p className="text-red-400 text-xs bg-red-950/50 rounded-lg px-3 py-2">
+                <p className="text-red-600 dark:text-red-400 text-xs bg-red-100 dark:bg-red-950/50 rounded-lg px-3 py-2">
                   {error}
                 </p>
               )}
@@ -228,16 +236,24 @@ export default function SignupPage() {
           {step === "otp" && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-white font-bold text-lg mb-1">
+                <h2 className="text-slate-900 dark:text-white font-bold text-lg mb-1">
                   OTP যাচাই করুন
                 </h2>
-                <p className="text-slate-400 text-sm">
-                  {mobile} এ OTP পাঠানো হয়েছে
+                <p className="text-slate-500 dark:text-slate-400 text-sm">
+                  {mobile} এ OTP পাঠানো হয়েছ
                 </p>
-                <p className="text-slate-400 text-sm">
+                <p className="text-slate-500 dark:text-slate-400 text-sm">
                   {showOtp}
                 </p>
               </div>
+              {isClaiming && (
+                <div className="bg-amber-950/40 border border-amber-800/40 rounded-xl px-3 py-2.5 mb-4">
+                  <p className="text-amber-400 text-xs">
+                    ⚠️ আপনার account আগে থেকে তৈরি আছে। OTP verify করে PIN set
+                    করুন — আপনার সব বাকির ইতিহাস সংরক্ষিত আছে।
+                  </p>
+                </div>
+              )}
               <div className="flex gap-2 justify-center">
                 {[0, 1, 2, 3, 4, 5].map((i) => (
                   <input
@@ -257,12 +273,12 @@ export default function SignupPage() {
                           ) as HTMLInputElement
                         )?.focus();
                     }}
-                    className="w-12 h-14 bg-slate-900 border-2 border-slate-600 focus:border-teal-500 rounded-xl text-center text-white text-xl font-mono font-bold outline-none transition-colors"
+                    className="w-12 h-14 bg-white dark:bg-slate-900 border-2 border-gray-300 dark:border-slate-600 focus:border-teal-500 rounded-xl text-center text-slate-900 dark:text-white text-xl font-mono font-bold outline-none transition-colors"
                   />
                 ))}
               </div>
               {error && (
-                <p className="text-red-400 text-xs bg-red-950/50 rounded-lg px-3 py-2">
+                <p className="text-red-600 dark:text-red-400 text-xs bg-red-100 dark:bg-red-950/50 rounded-lg px-3 py-2">
                   {error}
                 </p>
               )}
@@ -277,10 +293,10 @@ export default function SignupPage() {
               >
                 যাচাই করুন ✓
               </Button>
-              <p className="text-center text-slate-500 text-xs">
+              <p className="text-center text-slate-500 dark:text-slate-500 text-xs">
                 OTP আসেনি?{" "}
                 <button
-                  className="text-teal-400 hover:underline"
+                  className="text-teal-600 dark:text-teal-400 hover:underline"
                   onClick={handleRegister}
                 >
                   পুনরায় পাঠান
@@ -292,11 +308,13 @@ export default function SignupPage() {
           {step === "pin" && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-white font-bold text-lg mb-1">
+                <h2 className="text-slate-900 dark:text-white font-bold text-lg mb-1">
                   PIN সেট করুন
                 </h2>
-                <p className="text-slate-400 text-sm">
-                  দ্রুত লগইনের জন্য ৪ সংখ্যার PIN
+                <p className="text-slate-500 dark:text-slate-400 text-sm">
+                  {isClaiming
+                    ? "আপনার account এর জন্য নতুন PIN সেট করুন"
+                    : "দ্রুত লগইনের জন্য ৪ সংখ্যার PIN"}
                 </p>
               </div>
               {pinConfirm === "" ? (
@@ -316,10 +334,12 @@ export default function SignupPage() {
                 />
               )}
               {pinConfirm.trim().length > 0 && pinConfirm.trim() !== pin && (
-                <p className="text-red-400 text-xs text-center">PIN মিলছে না</p>
+                <p className="text-red-600 dark:text-red-400 text-xs text-center">
+                  PIN মিলছে না
+                </p>
               )}
               {error && (
-                <p className="text-red-400 text-xs bg-red-950/50 rounded-lg px-3 py-2">
+                <p className="text-red-600 dark:text-red-400 text-xs bg-red-100 dark:bg-red-950/50 rounded-lg px-3 py-2">
                   {error}
                 </p>
               )}

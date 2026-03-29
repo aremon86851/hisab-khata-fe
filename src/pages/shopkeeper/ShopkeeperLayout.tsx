@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { shopApi } from "../../api";
 import { useAuth } from "../../hooks/useAuth";
-import { PageLoader } from "../../components/shared";
+import { PageLoader, Toast } from "../../components/shared";
 import { Menu, X } from "lucide-react";
 
 // ── Bottom nav (always visible on mobile) ─────────────────────────────────────
@@ -21,6 +21,8 @@ const DRAWER_NAV = [
   { path: "/shopkeeper/income", icon: "💰", label: "আয়-ব্যয়" },
   { path: "/shopkeeper/staff", icon: "👷", label: "Staff" },
   { path: "/shopkeeper/notifications", icon: "🔔", label: "Notification" },
+  { path: "/shopkeeper/fraud", icon: "🚨", label: "Fraud Checker" },
+  { path: "/shopkeeper/fraud/feed", icon: "⚠️", label: "Alert Board" },
 ];
 
 // ── Sidebar nav (desktop — all items) ────────────────────────────────────────
@@ -32,14 +34,30 @@ export default function ShopkeeperLayout() {
   const { logout } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const { data: shopRes, isLoading } = useQuery({
+  const {
+    data: shopRes,
+    isLoading,
+    isError,
+    error,
+  }: any = useQuery({
     queryKey: ["myShop"],
     queryFn: shopApi.getMyShop,
   });
 
+  if (isError) {
+    Toast({
+      msg: "Unable to fetch shop",
+      type: "error",
+      visible: true,
+    });
+    localStorage.clear();
+    window.location.href = "/login";
+    return;
+  }
+
   if (isLoading)
     return (
-      <div className="h-screen bg-slate-950 flex items-center justify-center">
+      <div className="h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
         <PageLoader />
       </div>
     );
@@ -57,20 +75,26 @@ export default function ShopkeeperLayout() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-950 max-w-screen-xl mx-auto">
+    <div className="flex h-screen bg-gray-50 dark:bg-slate-950 max-w-screen-xl mx-auto">
       {/* ── Desktop Sidebar ── */}
-      <aside className="hidden md:flex flex-col w-64 flex-shrink-0 bg-slate-900 border-r border-slate-800 h-screen sticky top-0">
-        <div className="px-5 py-5 border-b border-slate-800">
-          <div className="text-xl font-extrabold text-white flex items-center gap-2">
+      <aside className="hidden md:flex flex-col w-64 flex-shrink-0 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 h-screen sticky top-0">
+        <div className="px-5 py-5 border-b border-gray-100 dark:border-slate-800">
+          <div className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
             📒 HisabKhata
           </div>
-          <div className="text-teal-400 text-xs mt-0.5">হিসাবখাতা</div>
+          <div className="text-teal-600 dark:text-teal-400 text-xs mt-0.5">
+            হিসাবখাতা
+          </div>
         </div>
-        <div className="mx-4 mt-4 mb-2 bg-slate-800/60 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
+        <div className="mx-4 mt-4 mb-2 bg-gray-100 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-3 flex items-center gap-3">
           <span className="text-3xl">{emoji}</span>
           <div className="min-w-0">
-            <div className="text-white text-sm font-bold truncate">{title}</div>
-            <div className="text-slate-400 text-xs truncate">{subtitle}</div>
+            <div className="text-slate-900 dark:text-white text-sm font-bold truncate">
+              {title}
+            </div>
+            <div className="text-slate-500 dark:text-slate-400 text-xs truncate">
+              {subtitle}
+            </div>
           </div>
         </div>
         <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
@@ -82,7 +106,7 @@ export default function ShopkeeperLayout() {
                 ${
                   pathname.startsWith(n.path)
                     ? "bg-teal-600 text-white shadow-lg"
-                    : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                    : "text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
                 }`}
             >
               <span className="text-xl w-7 text-center">{n.icon}</span>
@@ -90,10 +114,10 @@ export default function ShopkeeperLayout() {
             </button>
           ))}
         </nav>
-        <div className="p-4 border-t border-slate-800">
+        <div className="p-4 border-t border-gray-100 dark:border-slate-800">
           <button
             onClick={logout}
-            className="w-full text-slate-400 hover:text-white border border-slate-700 hover:border-red-700 rounded-xl py-2 text-sm font-semibold transition-all"
+            className="w-full text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-gray-200 dark:border-slate-700 hover:border-red-400 dark:hover:border-red-700 rounded-xl py-2 text-sm font-semibold transition-all"
           >
             লগআউট
           </button>
@@ -103,27 +127,29 @@ export default function ShopkeeperLayout() {
       {/* ── Main ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Mobile header */}
-        <header className="md:hidden bg-slate-900 border-b border-slate-800 px-4 flex-shrink-0">
+        <header className="md:hidden bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 px-4 flex-shrink-0">
           <div className="flex items-center justify-between py-3">
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-xl flex-shrink-0">📒</span>
               <div className="min-w-0">
-                <div className="text-white font-bold text-sm truncate">
+                <div className="text-slate-900 dark:text-white font-bold text-sm truncate">
                   {title}
                 </div>
-                <div className="text-teal-400 text-xs truncate">{subtitle}</div>
+                <div className="text-teal-600 dark:text-teal-400 text-xs truncate">
+                  {subtitle}
+                </div>
               </div>
             </div>
             <div className="flex gap-2 items-center">
               <button
                 onClick={logout}
-                className="ml-3 flex-shrink-0 text-slate-500 text-xs px-3 py-1.5 rounded-lg border border-slate-700"
+                className="ml-3 flex-shrink-0 text-slate-500 dark:text-slate-400 text-xs px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-700"
               >
                 লগআউট
               </button>
               <button
                 onClick={() => setDrawerOpen(true)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
               >
                 <Menu size={22} />
               </button>
@@ -132,12 +158,12 @@ export default function ShopkeeperLayout() {
         </header>
 
         {/* Desktop topbar */}
-        <div className="hidden md:flex items-center px-6 py-4 border-b border-slate-800 flex-shrink-0">
+        <div className="hidden md:flex items-center px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex-shrink-0">
           <div>
-            <div className="text-white font-bold text-lg">
+            <div className="text-slate-900 dark:text-white font-bold text-lg">
               {current?.icon} {current?.label}
             </div>
-            <div className="text-slate-400 text-xs">
+            <div className="text-slate-500 dark:text-slate-400 text-xs">
               {title} — {subtitle}
             </div>
           </div>
@@ -149,14 +175,14 @@ export default function ShopkeeperLayout() {
         </div>
 
         {/* Mobile bottom nav */}
-        <nav className="md:hidden bg-slate-900 border-t border-slate-800 flex-shrink-0">
+        <nav className="md:hidden bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 flex-shrink-0">
           <div className="flex">
             {BOTTOM_NAV.map((n) => (
               <button
                 key={n.path}
                 onClick={() => navigate(n.path)}
                 className={`flex-1 flex flex-col items-center py-2.5 transition-all
-                  ${pathname.startsWith(n.path) ? "text-teal-400" : "text-slate-500"}`}
+                  ${pathname.startsWith(n.path) ? "text-teal-500" : "text-slate-500 dark:text-slate-500"}`}
               >
                 <span className="text-xl">{n.icon}</span>
                 <span className="text-[10px] mt-0.5 font-semibold">
@@ -173,31 +199,33 @@ export default function ShopkeeperLayout() {
       {/* Backdrop */}
       {drawerOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-40 bg-black/30 dark:bg-slate-950/60 backdrop-blur-sm md:hidden"
           onClick={() => setDrawerOpen(false)}
         />
       )}
 
       {/* Drawer panel */}
       <div
-        className={`fixed top-0 right-0 z-50 h-full w-72 bg-slate-900 border-l border-slate-800
+        className={`fixed top-0 right-0 z-50 h-full w-72 bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800
           shadow-2xl transition-transform duration-300 ease-in-out md:hidden
           ${drawerOpen ? "translate-x-0" : "translate-x-full"}`}
       >
         {/* Drawer header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <span className="text-2xl">{emoji}</span>
             <div>
-              <div className="text-white text-sm font-bold truncate max-w-[160px]">
+              <div className="text-slate-900 dark:text-white text-sm font-bold truncate max-w-[160px]">
                 {title}
               </div>
-              <div className="text-slate-400 text-xs">{subtitle}</div>
+              <div className="text-slate-500 dark:text-slate-400 text-xs">
+                {subtitle}
+              </div>
             </div>
           </div>
           <button
             onClick={() => setDrawerOpen(false)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors"
           >
             <X size={20} />
           </button>
@@ -216,7 +244,7 @@ export default function ShopkeeperLayout() {
                 ${
                   pathname.startsWith(n.path)
                     ? "bg-teal-600 text-white"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                    : "text-slate-600 hover:bg-gray-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
                 }`}
             >
               <span className="text-xl w-7 text-center">{n.icon}</span>
@@ -226,13 +254,13 @@ export default function ShopkeeperLayout() {
         </div>
 
         {/* Divider + logout at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-800">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100 dark:border-slate-800">
           <button
             onClick={() => {
               logout();
               setDrawerOpen(false);
             }}
-            className="w-full py-2.5 rounded-xl border border-red-800 text-red-400 font-semibold text-sm hover:bg-red-950/30 transition-colors"
+            className="w-full py-2.5 rounded-xl border border-red-300 dark:border-red-800 text-red-500 dark:text-red-400 font-semibold text-sm hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
           >
             লগআউট
           </button>
