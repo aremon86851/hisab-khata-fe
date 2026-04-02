@@ -26,6 +26,7 @@ export type TShopVerification = {
 
 export type TShop = {
   id: string; name: string; emoji: string; shopType: string | null; isActive: boolean; createdAt: string;
+  image?: string;
   verification: TShopVerification | null;
   _count?: { customers: number; transactions: number; products: number };
 };

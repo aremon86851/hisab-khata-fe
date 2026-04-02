@@ -6,18 +6,62 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Plus,
+  ShieldAlert,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { customerApi, transactionApi } from "@/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { customerApi, transactionApi, fraudApi } from "@/api";
 import CustomerViewSkeleton from "@/components/CustomerViewSkeleton";
 import { useState } from "react";
 import { Modal } from "@/components/shared";
 import ReminderModal from "@/components/RemainderModal";
+import { getApiError } from "@/utils/helpers";
+
+const FRAUD_TYPES = [
+  { value: "UNPAID_DEBT", label: "বাকি দেয়নি 💸" },
+  { value: "ABSCONDED", label: "পালিয়ে গেছে 🏃" },
+  { value: "FAKE_INFO", label: "ভুল তথ্য দিয়েছে 🤥" },
+  { value: "MULTIPLE_SHOPS", label: "একাধিক দোকানে বাকি 🏪" },
+  { value: "OTHER", label: "অন্যান্য" },
+];
 
 const CustomerViewPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [isOpenReminder, setIsOpenRemainder] = useState(false);
+
+  // Fraud report state
+  const [showFraudModal, setShowFraudModal] = useState(false);
+  const [fraudType, setFraudType] = useState("");
+  const [fraudDesc, setFraudDesc] = useState("");
+  const [fraudAmount, setFraudAmount] = useState("");
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [fraudErr, setFraudErr] = useState("");
+  const [fraudDone, setFraudDone] = useState(false);
+
+  const fraudMut = useMutation({
+    mutationFn: (customerId: string) =>
+      fraudApi.reportFraud({
+        customerId,
+        type: fraudType,
+        description: fraudDesc || undefined,
+        amountOwed: fraudAmount ? Number(fraudAmount) : undefined,
+        isAnonymous,
+      }),
+    onSuccess: () => {
+      setFraudDone(true);
+      qc.invalidateQueries({ queryKey: ["fraudFeed"] });
+      setTimeout(() => {
+        setShowFraudModal(false);
+        setFraudDone(false);
+        setFraudType("");
+        setFraudDesc("");
+        setFraudAmount("");
+        setFraudErr("");
+      }, 2000);
+    },
+    onError: (e) => setFraudErr(getApiError(e)),
+  });
 
   const { data: cr, isLoading } = useQuery({
     queryKey: ["shopCustomers", id],
@@ -34,6 +78,7 @@ const CustomerViewPage = () => {
 
   const customer = cr?.data?.data;
   const customerTransaction = cusTxnR?.data?.data;
+  console.log("Customer Details:", customer);
 
   const formatDateTimeBn = (isoString: string) => {
     const date = new Date(isoString);
@@ -164,6 +209,18 @@ const CustomerViewPage = () => {
           <Plus size={18} />
           হিসাব করুন
         </button>
+
+        {/* Report Fraud */}
+        <button
+          onClick={() => {
+            setFraudAmount(String(customer?.balance ?? ""));
+            setShowFraudModal(true);
+          }}
+          className="w-full border border-red-300 dark:border-red-800 text-red-500 dark:text-red-400 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold hover:bg-red-50 dark:hover:bg-red-950/30 transition"
+        >
+          <ShieldAlert size={16} />
+          প্রতারক হিসেবে রিপোর্ট করুন
+        </button>
       </div>
       {isOpenReminder && (
         <Modal
@@ -173,6 +230,112 @@ const CustomerViewPage = () => {
         >
           <ReminderModal customer={customer} />
         </Modal>
+      )}
+
+      {/* Fraud Report Modal */}
+      {showFraudModal && (
+        <div className="fixed inset-0 bg-black/60 dark:bg-slate-950/80 z-50 flex items-end">
+          <div className="bg-white dark:bg-slate-800 w-full rounded-t-2xl p-5 space-y-4 animate-in slide-in-from-bottom duration-300 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-red-500" />
+                <h3 className="font-bold text-gray-800 dark:text-white">প্রতারণা রিপোর্ট</h3>
+              </div>
+              <button
+                onClick={() => { setShowFraudModal(false); setFraudErr(""); setFraudType(""); setFraudDesc(""); setFraudAmount(""); }}
+                className="text-gray-400 dark:text-slate-500 text-xl leading-none"
+              >✕</button>
+            </div>
+
+            {fraudDone ? (
+              <div className="py-8 text-center space-y-2">
+                <p className="text-3xl">✅</p>
+                <p className="font-bold text-green-600 dark:text-green-400">রিপোর্ট সফলভাবে জমা হয়েছে</p>
+                <p className="text-sm text-slate-500">কমিউনিটিকে ধন্যবাদ জানানো হচ্ছে।</p>
+              </div>
+            ) : (
+              <>
+                {/* Customer chip */}
+                <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-xl px-4 py-3 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-red-500 flex items-center justify-center text-white font-bold text-sm">
+                    {customer?.customer?.name?.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-white">{customer?.customer?.name}</p>
+                    <p className="text-xs text-slate-500">{customer?.customer?.mobile}</p>
+                  </div>
+                </div>
+
+                {/* Fraud type */}
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-200">সমস্যার ধরন বেছে নিন</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {FRAUD_TYPES.map((ft) => (
+                      <button
+                        key={ft.value}
+                        onClick={() => setFraudType(ft.value)}
+                        className={`text-xs font-semibold px-3 py-2.5 rounded-xl border-2 text-left transition ${
+                          fraudType === ft.value
+                            ? "border-red-500 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400"
+                            : "border-gray-200 dark:border-slate-600 text-slate-600 dark:text-slate-300"
+                        }`}
+                      >
+                        {ft.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Amount (optional) */}
+                <div>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5 block">বাকির পরিমাণ (ঐচ্ছিক)</label>
+                  <input
+                    type="number"
+                    value={fraudAmount}
+                    onChange={(e) => setFraudAmount(e.target.value)}
+                    placeholder="যেমন: ৫০০"
+                    className="w-full bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white outline-none focus:border-red-400"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5 block">বিস্তারিত (ঐচ্ছিক)</label>
+                  <textarea
+                    value={fraudDesc}
+                    onChange={(e) => setFraudDesc(e.target.value)}
+                    rows={3}
+                    placeholder="যা ঘটেছে সংক্ষেপে লিখুন..."
+                    className="w-full bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white outline-none focus:border-red-400 resize-none"
+                  />
+                </div>
+
+                {/* Anonymous toggle */}
+                <button
+                  onClick={() => setIsAnonymous(!isAnonymous)}
+                  className="flex items-center gap-3 w-full"
+                >
+                  <div className={`relative w-11 h-6 rounded-full transition-colors ${isAnonymous ? "bg-red-500" : "bg-gray-200 dark:bg-slate-600"}`}>
+                    <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${isAnonymous ? "left-6" : "left-1"}`} />
+                  </div>
+                  <span className="text-sm text-slate-600 dark:text-slate-300">পরিচয় গোপন রাখুন (Anonymous)</span>
+                </button>
+
+                {fraudErr && <p className="text-red-500 text-sm">{fraudErr}</p>}
+
+                <button
+                  onClick={() => { setFraudErr(""); fraudMut.mutate(customer?.customer?.id!); }}
+                  disabled={!fraudType || fraudMut.isPending}
+                  className="w-full py-3 bg-red-500 text-white font-bold rounded-xl text-sm disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  <ShieldAlert size={16} />
+                  {fraudMut.isPending ? "জমা হচ্ছে..." : "রিপোর্ট জমা দিন"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

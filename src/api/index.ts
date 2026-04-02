@@ -24,13 +24,17 @@ export const authApi = {
   forgotPin: (mobile: string) =>
     axiosPublic.post("/auth/forgot-pin", { mobile }),
   getMyProfile: () => axiosPrivate.get("/auth/me"),
+   changePin: (d: { currentPin: string; newPin: string }) =>
+    axiosPrivate.post("/auth/change-pin", d),
+  deleteAccount: () => axiosPrivate.delete("/auth/account"),
 };
 
 // ── Shop ──────────────────────────────────────────────────────────────────────
 export const shopApi = {
   getMyShop: () => axiosPrivate.get("/shop"),
   updateShop: (d: object) => axiosPrivate.patch("/shop", d),
-  submitVerification: (d: object) => axiosPrivate.post("/shop/verify", d),
+  uploadImage: (formData: FormData) => axiosPrivate.patch("/shop/image", formData),
+  submitVerification: (formData: FormData) => axiosPrivate.post("/shop/verify", formData),
   getVerificationStatus: () => axiosPrivate.get("/shop/verify/status"),
 };
 
@@ -117,6 +121,8 @@ export const notifApi = {
   getAll: (params?: object) => axiosPrivate.get("/notifications", { params }),
   markRead: (id: string) => axiosPrivate.patch(`/notifications/${id}/read`),
   markAllRead: () => axiosPrivate.patch("/notifications/read-all"),
+  getSettings: () => axiosPrivate.get("/notifications/settings"),
+  updateSettings: (d: object) => axiosPrivate.patch("/notifications/settings", d),
 };
 
 // ── Admin ─────────────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { Link, useOutletContext } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { Link, useOutletContext, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { shopApi, reminderApi } from "../../api";
+import { shopApi, reminderApi, authApi, notifApi } from "../../api";
 import { useAuth } from "../../hooks/useAuth";
 import { useTheme } from "../../hooks/useTheme";
 import { getApiError } from "../../utils/helpers";
@@ -24,6 +24,7 @@ export default function SettingsPage() {
   const qc = useQueryClient();
   const { logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const navigate = useNavigate();
 
   const [shopName, setShopName] = useState(shop?.name || "");
   const [ownerName, setOwnerName] = useState(shop?.ownerName || "");
@@ -51,8 +52,8 @@ export default function SettingsPage() {
     settings?.channel ?? "BOTH",
   );
   const [template, setTemplate] = useState(settings?.messageTemplate ?? "");
-  const [newBakiAlert, setNewBakiAlert] = useState(true);
-  const [paymentAlert, setPaymentAlert] = useState(true);
+  const [newBakiAlert, setNewBakiAlert] = useState(false);
+  const [paymentAlert, setPaymentAlert] = useState(false);
   const [dailySummary, setDailySummary] = useState(false);
 
   const shopMut = useMutation({
@@ -75,6 +76,85 @@ export default function SettingsPage() {
         messageTemplate: template,
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["reminderSettings"] }),
+  });
+
+  // Fix: sync reminder state when server data resolves
+  useEffect(() => {
+    if (!settings) return;
+    setAutoRemind(settings.autoRemindEnabled ?? false);
+    setDaysAfter(settings.daysAfterBaki ?? 15);
+    setChannel(settings.channel ?? "BOTH");
+    setTemplate(settings.messageTemplate ?? "");
+  }, [settings]);
+
+  // Notification settings (server-driven)
+  const { data: nsr } = useQuery({
+    queryKey: ["notifSettings"],
+    queryFn: notifApi.getSettings,
+  });
+  const notifSettings = (nsr?.data as any)?.data;
+
+  useEffect(() => {
+    if (!notifSettings) return;
+    setNewBakiAlert(notifSettings.newBakiAlert ?? false);
+    setPaymentAlert(notifSettings.paymentAlert ?? false);
+    setDailySummary(notifSettings.dailySummary ?? false);
+  }, [notifSettings]);
+
+  const notifSettMut = useMutation({
+    mutationFn: (d: object) => notifApi.updateSettings(d),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifSettings"] }),
+  });
+
+  // Image upload
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+
+  const handleImageUpload = async (file: File) => {
+    setImageUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("shopImage", file);
+      await shopApi.uploadImage(fd);
+      qc.invalidateQueries({ queryKey: ["myShop"] });
+    } catch {
+      // no-op
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  // Change PIN
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [currentPin, setCurrentPin] = useState("");
+  const [newPin, setNewPin] = useState("");
+  const [pinErr, setPinErr] = useState("");
+  const [pinSuccess, setPinSuccess] = useState(false);
+
+  const pinMut = useMutation({
+    mutationFn: () => authApi.changePin({ currentPin, newPin }),
+    onSuccess: () => {
+      setPinSuccess(true);
+      setTimeout(() => {
+        setShowPinModal(false);
+        setPinSuccess(false);
+        setCurrentPin("");
+        setNewPin("");
+        setPinErr("");
+      }, 1500);
+    },
+    onError: (e) => setPinErr(getApiError(e)),
+  });
+
+  // Delete account
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const deleteMut = useMutation({
+    mutationFn: () => authApi.deleteAccount(),
+    onSuccess: () => {
+      logout();
+      navigate("/login");
+    },
   });
 
   const verificationStatus = shop?.verification?.status || "UNSUBMITTED";
@@ -131,24 +211,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 pb-10">
-      {/* Header */}
-      <div className="bg-white dark:bg-slate-800 px-4 py-4 flex items-center gap-3 border-b border-gray-100 dark:border-slate-700">
-        <button
-          onClick={() => window.history.back()}
-          className="text-gray-600 dark:text-gray-300"
-        >
-          <ChevronRight className="rotate-180 w-5 h-5" />
-        </button>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-gray-800 dark:text-white text-lg">
-              সেটিংস
-            </span>
-          </div>
-        </div>
-      </div>
-
+    <div className="bg-gray-50 dark:bg-slate-900 pb-10">
       {err && (
         <div className="mx-4 mt-3 bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 text-sm px-4 py-3 rounded-xl">
           {err}
@@ -212,9 +275,16 @@ export default function SettingsPage() {
                     <span className="text-4xl">🏪</span>
                   )}
                 </div>
-                <button className="absolute -bottom-1 -right-1 w-7 h-7 bg-teal-500 rounded-full flex items-center justify-center shadow">
+                <button className="absolute -bottom-1 -right-1 w-7 h-7 bg-teal-500 rounded-full flex items-center justify-center shadow" onClick={() => imageInputRef.current?.click()} disabled={imageUploading}>
                   <Camera className="w-3.5 h-3.5 text-white" />
                 </button>
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); }}
+                />
               </div>
               <p className="text-xs text-gray-400 dark:text-slate-500 mt-2">
                 দোকানের ছবি পরিবর্তন করুন
@@ -326,7 +396,13 @@ export default function SettingsPage() {
                   নতুন বাকি এলার্ট
                 </span>
               </div>
-              <ToggleSwitch value={newBakiAlert} onChange={setNewBakiAlert} />
+              <ToggleSwitch
+                value={newBakiAlert}
+                onChange={(v) => {
+                  setNewBakiAlert(v);
+                  notifSettMut.mutate({ newBakiAlert: v, paymentAlert, dailySummary });
+                }}
+              />
             </div>
 
             <div className="px-4 py-4 flex items-center justify-between">
@@ -338,7 +414,13 @@ export default function SettingsPage() {
                   পেমেন্ট এলার্ট
                 </span>
               </div>
-              <ToggleSwitch value={paymentAlert} onChange={setPaymentAlert} />
+              <ToggleSwitch
+                value={paymentAlert}
+                onChange={(v) => {
+                  setPaymentAlert(v);
+                  notifSettMut.mutate({ newBakiAlert, paymentAlert: v, dailySummary });
+                }}
+              />
             </div>
 
             <div className="px-4 py-4 flex items-center justify-between">
@@ -354,7 +436,13 @@ export default function SettingsPage() {
                 <span className="text-xs text-gray-400 dark:text-slate-500">
                   রাত ০৯:০০
                 </span>
-                <ToggleSwitch value={dailySummary} onChange={setDailySummary} />
+                <ToggleSwitch
+                  value={dailySummary}
+                  onChange={(v) => {
+                    setDailySummary(v);
+                    notifSettMut.mutate({ newBakiAlert, paymentAlert, dailySummary: v });
+                  }}
+                />
               </div>
             </div>
 
@@ -477,7 +565,7 @@ export default function SettingsPage() {
             </span>
           </h2>
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm divide-y divide-gray-100 dark:divide-slate-700">
-            <button className="w-full px-4 py-4 flex items-center justify-between">
+            <button className="w-full px-4 py-4 flex items-center justify-between" onClick={() => setShowPinModal(true)}>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
                   <Lock className="w-4 h-4 text-gray-500 dark:text-slate-400" />
@@ -509,7 +597,7 @@ export default function SettingsPage() {
         </section>
 
         {/* ── Delete Account ── */}
-        <button className="w-full py-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-2xl flex items-center justify-center gap-2">
+        <button className="w-full py-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-2xl flex items-center justify-center gap-2" onClick={() => setShowDeleteConfirm(true)}>
           <Trash2 className="w-4 h-4 text-red-500 dark:text-red-400" />
           <span className="text-red-500 dark:text-red-400 font-bold text-sm">
             আকাউন্ট মুছে ফেলুন (Delete Account)
@@ -531,6 +619,80 @@ export default function SettingsPage() {
 
       {/* Edit Modal */}
       <EditModal />
+
+      {/* Change PIN Modal */}
+      {showPinModal && (
+        <div className="fixed inset-0 bg-black/50 dark:bg-slate-950/80 z-50 flex items-end">
+          <div className="bg-white dark:bg-slate-800 w-full rounded-t-2xl p-5 space-y-4 animate-in slide-in-from-bottom duration-300">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-gray-800 dark:text-white">পিন পরিবর্তন করুন</h3>
+              <button
+                onClick={() => { setShowPinModal(false); setPinErr(""); setCurrentPin(""); setNewPin(""); }}
+                className="text-gray-400 dark:text-slate-500 text-xl"
+              >✕</button>
+            </div>
+            {pinSuccess ? (
+              <p className="text-teal-500 text-sm text-center py-4">✅ পিন সফলভাবে পরিবর্তিত হয়েছে!</p>
+            ) : (
+              <>
+                {pinErr && <p className="text-red-500 text-sm">{pinErr}</p>}
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={currentPin}
+                  onChange={(e) => setCurrentPin(e.target.value)}
+                  placeholder="বর্তমান পিন (Current PIN)"
+                  className="w-full bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white outline-none focus:border-teal-500"
+                />
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={newPin}
+                  onChange={(e) => setNewPin(e.target.value)}
+                  placeholder="নতুন পিন (New PIN)"
+                  className="w-full bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white outline-none focus:border-teal-500"
+                />
+                <button
+                  onClick={() => { setPinErr(""); pinMut.mutate(); }}
+                  disabled={pinMut.isPending || !currentPin || !newPin}
+                  className="w-full py-3 bg-teal-500 text-white font-bold rounded-xl text-sm disabled:opacity-60"
+                >
+                  {pinMut.isPending ? "পরিবর্তন হচ্ছে..." : "পিন পরিবর্তন করুন"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Confirmation */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 dark:bg-slate-950/80 z-50 flex items-center justify-center px-4">
+          <div className="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl p-6 space-y-4">
+            <h3 className="font-bold text-gray-800 dark:text-white text-lg">আকাউন্ট মুছে ফেলুন?</h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400">
+              এই অ্যাকশন পূর্বাবস্থায় ফেরানো যাবে না। আপনার দোকান এবং সমস্ত ডেটা নিষ্ক্রিয় হয়ে যাবে।
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 py-3 border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 font-bold rounded-xl text-sm"
+              >
+                বাতিল করুন
+              </button>
+              <button
+                onClick={() => deleteMut.mutate()}
+                disabled={deleteMut.isPending}
+                className="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl text-sm disabled:opacity-60"
+              >
+                {deleteMut.isPending ? "মুছছে..." : "হ্যাঁ, মুছুন"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
