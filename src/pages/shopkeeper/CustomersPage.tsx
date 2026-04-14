@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { customerApi } from "../../api";
@@ -12,9 +12,19 @@ import {
   Modal,
 } from "../../components/shared";
 import { taka, getApiError } from "../../utils/helpers";
+import { useBasePath } from "../../hooks/useBasePath";
+import { useStaffPermissions } from "../../hooks/useStaffPermissions";
+
+const RISK_BADGE: Record<string, { label: string; cls: string; icon: string }> = {
+  LOW:    { label: "১টি অপেক্ষমান রিপোর্ট",           cls: "bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-400", icon: "⚠️" },
+  MEDIUM: { label: "নিশ্চিত রিপোর্ট বা ৩+ অপেক্ষমান",  cls: "bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-400", icon: "🔶" },
+  HIGH:   { label: "৩+ নিশ্চিত রিপোর্ট — উচ্চ ঝুঁকি",   cls: "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400",       icon: "🚨" },
+};
 
 export default function CustomersPage() {
   const navigate = useNavigate();
+  const basePath = useBasePath();
+  const perms = useStaffPermissions();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "baki" | "paid">("all");
@@ -23,6 +33,31 @@ export default function CustomersPage() {
   const [mob, setMob] = useState("");
   const [op, setOp] = useState("");
   const [err, setErr] = useState("");
+
+  // Fraud pre-check state (Section 2)
+  const [checkResult, setCheckResult] = useState<any>(null);
+  const [showFraudReports, setShowFraudReports] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounced fraud check when mobile reaches 11 digits
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setCheckResult(null);
+    setShowFraudReports(false);
+    if (mob.length === 11) {
+      debounceRef.current = setTimeout(async () => {
+        try {
+          const res = await customerApi.checkMobile(mob);
+          const d = (res?.data as any)?.data;
+          if (d) {
+            setCheckResult(d);
+            if (d.autofill?.name) setNm(d.autofill.name);
+          }
+        } catch { /* ignore */ }
+      }, 500);
+    }
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [mob]);
 
   const hb = filter === "baki" ? true : filter === "paid" ? false : undefined;
 
@@ -68,12 +103,14 @@ export default function CustomersPage() {
           placeholder="নাম বা মোবাইল..."
           className="flex-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 focus:border-teal-500 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white text-sm outline-none"
         />
-        <button
-          onClick={() => setShowAdd(true)}
-          className="bg-teal-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm"
-        >
-          + যোগ
-        </button>
+        {perms.canAddCustomer && (
+          <button
+            onClick={() => setShowAdd(true)}
+            className="bg-teal-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm"
+          >
+            + যোগ
+          </button>
+        )}
       </div>
 
       <div className="flex gap-2">
@@ -104,7 +141,7 @@ export default function CustomersPage() {
                   {c.name.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <Link to={`/shopkeeper/customer/${c.id}`}>
+                  <Link to={`${basePath}/customer/${c.id}`}>
                     <div className="text-slate-900 dark:text-white font-bold text-sm">
                       {c.name}
                     </div>
@@ -128,16 +165,18 @@ export default function CustomersPage() {
                   interactive
                   onChange={(r) => rateMut.mutate({ id: c.id, r })}
                 />
-                <button
-                  onClick={() =>
-                    navigate("/shopkeeper/calculator", {
-                      state: { custId: c.id },
-                    })
-                  }
-                  className="text-xs bg-teal-700 hover:bg-teal-600 text-white px-3 py-1.5 rounded-lg font-semibold"
-                >
-                  🧮 হিসাব
-                </button>
+                {(perms.canAddBaki || perms.canAddPayment) && (
+                  <button
+                    onClick={() =>
+                      navigate(`${basePath}/calculator`, {
+                        state: { custId: c.id },
+                      })
+                    }
+                    className="text-xs bg-teal-700 hover:bg-teal-600 text-white px-3 py-1.5 rounded-lg font-semibold"
+                  >
+                    🧮 হিসাব
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -163,6 +202,40 @@ export default function CustomersPage() {
             type="tel"
             placeholder="01XXXXXXXXX"
           />
+
+          {/* Risk badge */}
+          {checkResult?.fraud?.riskLevel && checkResult.fraud.riskLevel !== "NONE" && (() => {
+            const badge = RISK_BADGE[checkResult.fraud.riskLevel];
+            return badge ? (
+              <div className="space-y-2">
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold ${badge.cls}`}>
+                  <span>{badge.icon}</span>
+                  <span>{badge.label}</span>
+                  <button
+                    type="button"
+                    className="ml-auto underline opacity-70"
+                    onClick={() => setShowFraudReports(!showFraudReports)}
+                  >
+                    {showFraudReports ? "লুকান" : "বিস্তারিত"}
+                  </button>
+                </div>
+                {showFraudReports && checkResult.fraud.reports?.length > 0 && (
+                  <div className="space-y-1.5">
+                    {checkResult.fraud.reports.map((r: any) => (
+                      <div key={r.id} className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-xl px-3 py-2 text-xs">
+                        <div className="flex justify-between">
+                          <span className="font-bold text-red-700 dark:text-red-400">{r.type}</span>
+                          <span className="text-slate-400">{r.status}</span>
+                        </div>
+                        {r.description && <p className="text-slate-600 dark:text-slate-300 mt-0.5">{r.description}</p>}
+                        {r.amountOwed > 0 && <p className="text-red-500 font-semibold">{taka(r.amountOwed)}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null;
+          })()}
           <Input
             label="প্রারম্ভিক বাকি (ঐচ্ছিক)"
             value={op}

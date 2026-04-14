@@ -38,6 +38,14 @@ import CustomerTxnView from "./pages/public/CustomerTxnView";
 import ShopVerificationPage from "./pages/shopkeeper/ShopSettings";
 import FraudCheckerPage from "./pages/shopkeeper/FraudCheckerPage";
 import FraudFeedPage from "./pages/shopkeeper/FraudFeedPage";
+import RequestsPage from "./pages/shopkeeper/RequestsPage";
+import ReportsPage from "./pages/shopkeeper/ReportsPage";
+import CampaignsPage from "./pages/shopkeeper/CampaignsPage";
+import CampaignDetailPage from "./pages/shopkeeper/CampaignDetailPage";
+import CustomerCampaignsPage from "./pages/customer/CustomerCampaignsPage";
+import StaffLayout from "./pages/staff/StaffLayout";
+import StaffDashboardPage from "./pages/staff/StaffDashboardPage";
+import StaffPermissionGate from "./components/StaffPermissionGate";
 
 // ── Protected Route ───────────────────────────────────────────────────────────
 function ProtectedRoute({
@@ -58,6 +66,7 @@ function HomeRedirect() {
   const { isLoggedIn, role } = useAuth();
   if (!isLoggedIn) return <Navigate to="/login" replace />;
   if (role === "CUSTOMER") return <Navigate to="/customer/home" replace />;
+  if (role === "STAFF") return <Navigate to="/staff/dashboard" replace />;
   if (role === "ADMIN" || role === "SUPER_ADMIN")
     return <Navigate to="/admin/dashboard" replace />;
   return <Navigate to="/shopkeeper/dashboard" replace />;
@@ -73,9 +82,11 @@ export default function App() {
       to={
         role === "CUSTOMER"
           ? "/customer/home"
-          : role === "ADMIN" || role === "SUPER_ADMIN"
-            ? "/admin/dashboard"
-            : "/shopkeeper/dashboard"
+          : role === "STAFF"
+            ? "/staff/dashboard"
+            : role === "ADMIN" || role === "SUPER_ADMIN"
+              ? "/admin/dashboard"
+              : "/shopkeeper/dashboard"
       }
       replace
     />
@@ -92,7 +103,7 @@ export default function App() {
       <Route
         path="/shopkeeper"
         element={
-          <ProtectedRoute roles={["SHOPKEEPER", "STAFF"]}>
+          <ProtectedRoute roles={["SHOPKEEPER"]}>
             <ShopkeeperLayout />
           </ProtectedRoute>
         }
@@ -111,6 +122,10 @@ export default function App() {
         <Route path="verification" element={<ShopVerificationPage />} />
         <Route path="fraud" element={<FraudCheckerPage />} />
         <Route path="fraud/feed" element={<FraudFeedPage />} />
+        <Route path="requests" element={<RequestsPage />} />
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="campaigns" element={<CampaignsPage />} />
+        <Route path="campaigns/:id" element={<CampaignDetailPage />} />
       </Route>
 
       {/* ── Customer ── */}
@@ -125,6 +140,7 @@ export default function App() {
         <Route index element={<Navigate to="home" replace />} />
         <Route path="home" element={<HomePage />} />
         <Route path="shops" element={<ShopsPage />} />
+        <Route path="campaigns" element={<CustomerCampaignsPage />} />
         <Route path="profile" element={<ProfilePage />} />
       </Route>
 
@@ -147,6 +163,72 @@ export default function App() {
 
       {/* Root redirect */}
       <Route path="/txn/:sid/:cid" element={<CustomerTxnView />} />
+
+      {/* ── Staff ── */}
+      <Route
+        path="/staff"
+        element={
+          <ProtectedRoute roles={["STAFF"]}>
+            <StaffLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<StaffDashboardPage />} />
+        <Route
+          path="customers"
+          element={
+            <StaffPermissionGate
+              requires={["canAddBaki", "canAddPayment", "canAddCustomer"]}
+            >
+              <CustomersPage />
+            </StaffPermissionGate>
+          }
+        />
+        <Route
+          path="customer/:id"
+          element={
+            <StaffPermissionGate
+              requires={["canAddBaki", "canAddPayment", "canAddCustomer"]}
+            >
+              <CustomerViewPage />
+            </StaffPermissionGate>
+          }
+        />
+        <Route
+          path="calculator"
+          element={
+            <StaffPermissionGate requires={["canAddBaki", "canAddPayment"]}>
+              <CalculatorPage />
+            </StaffPermissionGate>
+          }
+        />
+        <Route
+          path="products"
+          element={
+            <StaffPermissionGate requires={["canManageProduct"]}>
+              <ProductsPage />
+            </StaffPermissionGate>
+          }
+        />
+        <Route
+          path="reminders"
+          element={
+            <StaffPermissionGate requires={["canSendReminder"]}>
+              <RemindersPage />
+            </StaffPermissionGate>
+          }
+        />
+        <Route
+          path="reports"
+          element={
+            <StaffPermissionGate requires={["canViewReport"]}>
+              <ReportsPage />
+            </StaffPermissionGate>
+          }
+        />
+      </Route>
+
       <Route path="/" element={<HomeRedirect />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

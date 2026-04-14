@@ -1,62 +1,32 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { shopApi } from "../../api";
+import { useQuery } from "@tanstack/react-query";
+import { staffApi } from "../../api";
 import { useAuth } from "../../hooks/useAuth";
-import { PageLoader, Toast } from "../../components/shared";
+import { PageLoader } from "../../components/shared";
 import { Menu, X } from "lucide-react";
 
-// ── Bottom nav (always visible on mobile) ─────────────────────────────────────
-const BOTTOM_NAV = [
-  { path: "/shopkeeper/dashboard", icon: "🏚️", label: "হোম" },
-  { path: "/shopkeeper/calculator", icon: "🧮", label: "হিসাব" },
-  { path: "/shopkeeper/customers", icon: "👥", label: "কাষ্টমার" },
-  { path: "/shopkeeper/settings", icon: "⚙️", label: "সেটিংস" },
+type NavItem = { path: string; icon: string; label: string; perm?: string | string[] };
+
+const ALL_NAV: NavItem[] = [
+  { path: "/staff/dashboard",  icon: "🏠", label: "ড্যাশবোর্ড" },
+  { path: "/staff/customers",  icon: "👥", label: "কাষ্টমার",  perm: ["canAddBaki", "canAddPayment", "canAddCustomer"] },
+  { path: "/staff/calculator", icon: "🧮", label: "ক্যালকুলেটর", perm: ["canAddBaki", "canAddPayment"] },
+  { path: "/staff/products",   icon: "📦", label: "পণ্য",      perm: "canManageProduct" },
+  { path: "/staff/reminders",  icon: "💬", label: "রিমাইন্ডার", perm: "canSendReminder" },
+  { path: "/staff/reports",    icon: "📊", label: "রিপোর্ট",    perm: "canViewReport" },
 ];
 
-// ── Drawer nav (extra items shown in hamburger drawer) ────────────────────────
-const DRAWER_NAV = [
-  { path: "/shopkeeper/products",  icon: "📦", label: "Products"    },
-  { path: "/shopkeeper/reminders", icon: "💬", label: "Reminder"    },
-  { path: "/shopkeeper/income",    icon: "💰", label: "আয়-ব্যয়"    },
-  { path: "/shopkeeper/staff",     icon: "👷", label: "Staff"       },
-  { path: "/shopkeeper/notifications", icon: "🔔", label: "Notification" },
-  { path: "/shopkeeper/requests",  icon: "📬", label: "Requests"    },
-  { path: "/shopkeeper/reports",   icon: "📊", label: "রিপোর্ট"     },
-  { path: "/shopkeeper/fraud",     icon: "🚨", label: "Fraud Checker" },
-  { path: "/shopkeeper/fraud/feed",icon: "⚠️", label: "Alert Board"  },
-  { path: "/shopkeeper/campaigns", icon: "📢", label: "ক্যাম্পেইন"   },
-];
-
-// ── Sidebar nav (desktop — all items) ────────────────────────────────────────
-const SIDEBAR_NAV = [...BOTTOM_NAV, ...DRAWER_NAV];
-
-export default function ShopkeeperLayout() {
+export default function StaffLayout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { logout } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const {
-    data: shopRes,
-    isLoading,
-    isError,
-    error,
-  }: any = useQuery({
-    queryKey: ["myShop"],
-    queryFn: shopApi.getMyShop,
+  const { data: meRes, isLoading } = useQuery({
+    queryKey: ["staffMe"],
+    queryFn: staffApi.getMe,
   });
-
-  if (isError) {
-    Toast({
-      msg: "Unable to fetch shop",
-      type: "error",
-      visible: true,
-    });
-    localStorage.clear();
-    window.location.href = "/login";
-    return;
-  }
 
   if (isLoading)
     return (
@@ -65,12 +35,35 @@ export default function ShopkeeperLayout() {
       </div>
     );
 
-  const shop = (shopRes?.data as any)?.data;
-  localStorage.setItem("ssc", shop.shortCode);
-  const title = shop?.name || "My Shop";
-  const subtitle = shop?.verification?.district || "HisabKhata";
-  const emoji = shop?.emoji || "🏪";
-  const current = SIDEBAR_NAV.find((n) => pathname.startsWith(n.path));
+  const profile = (meRes?.data as any)?.data;
+  const shop = profile?.shop;
+  const shopName = shop?.name || "Shop";
+  const shopEmoji = shop?.emoji || "🏪";
+  const roleLabel = profile?.role === "MANAGER" ? "ম্যানেজার" : "স্টাফ";
+
+  const perms: Record<string, boolean> = {
+    canAddBaki: !!profile?.canAddBaki,
+    canAddPayment: !!profile?.canAddPayment,
+    canAddCustomer: !!profile?.canAddCustomer,
+    canViewReport: !!profile?.canViewReport,
+    canManageProduct: !!profile?.canManageProduct,
+    canSendReminder: !!profile?.canSendReminder,
+  };
+
+  // Show nav items the staff has permission for (dashboard always visible)
+  const hasPerm = (p: string | string[] | undefined) => {
+    if (!p) return true;
+    if (Array.isArray(p)) return p.some((k) => perms[k]);
+    return !!perms[p];
+  };
+
+  const navItems = ALL_NAV.filter((n) => hasPerm(n.perm));
+
+  // Bottom nav = first 4, rest go to drawer
+  const bottomNav = navItems.slice(0, 4);
+  const drawerNav = navItems.slice(4);
+
+  const current = navItems.find((n) => pathname.startsWith(n.path) && n.path !== "/staff/dashboard") || navItems[0];
 
   const goTo = (path: string) => {
     navigate(path);
@@ -85,30 +78,30 @@ export default function ShopkeeperLayout() {
           <div className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
             📒 HisabKhata
           </div>
-          <div className="text-teal-600 dark:text-teal-400 text-xs mt-0.5">
-            হিসাবখাতা
+          <div className="text-violet-500 dark:text-violet-400 text-xs mt-0.5">
+            Staff Panel
           </div>
         </div>
         <div className="mx-4 mt-4 mb-2 bg-gray-100 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-3 flex items-center gap-3">
-          <span className="text-3xl">{emoji}</span>
+          <span className="text-3xl">{shopEmoji}</span>
           <div className="min-w-0">
             <div className="text-slate-900 dark:text-white text-sm font-bold truncate">
-              {title}
+              {shopName}
             </div>
-            <div className="text-slate-500 dark:text-slate-400 text-xs truncate">
-              {subtitle}
+            <div className="text-violet-500 dark:text-violet-400 text-xs truncate">
+              {profile?.name} · {roleLabel}
             </div>
           </div>
         </div>
         <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
-          {SIDEBAR_NAV.map((n) => (
+          {navItems.map((n) => (
             <button
               key={n.path}
               onClick={() => navigate(n.path)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all
                 ${
                   pathname.startsWith(n.path)
-                    ? "bg-teal-600 text-white shadow-lg"
+                    ? "bg-violet-600 text-white shadow-lg"
                     : "text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
                 }`}
             >
@@ -136,26 +129,28 @@ export default function ShopkeeperLayout() {
               <span className="text-xl flex-shrink-0">📒</span>
               <div className="min-w-0">
                 <div className="text-slate-900 dark:text-white font-bold text-sm truncate">
-                  {title}
+                  {shopName}
                 </div>
-                <div className="text-teal-600 dark:text-teal-400 text-xs truncate">
-                  {subtitle}
+                <div className="text-violet-500 dark:text-violet-400 text-xs truncate">
+                  {profile?.name} · {roleLabel}
                 </div>
               </div>
             </div>
             <div className="flex gap-2 items-center">
               <button
                 onClick={logout}
-                className="ml-3 flex-shrink-0 text-slate-500 dark:text-slate-400 text-xs px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-700"
+                className="flex-shrink-0 text-slate-500 dark:text-slate-400 text-xs px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-700"
               >
                 লগআউট
               </button>
-              <button
-                onClick={() => setDrawerOpen(true)}
-                className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                <Menu size={22} />
-              </button>
+              {drawerNav.length > 0 && (
+                <button
+                  onClick={() => setDrawerOpen(true)}
+                  className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <Menu size={22} />
+                </button>
+              )}
             </div>
           </div>
         </header>
@@ -167,25 +162,25 @@ export default function ShopkeeperLayout() {
               {current?.icon} {current?.label}
             </div>
             <div className="text-slate-500 dark:text-slate-400 text-xs">
-              {title} — {subtitle}
+              {shopName} — Staff Panel
             </div>
           </div>
         </div>
 
         {/* Page content */}
         <div className="flex-1 overflow-y-auto">
-          <Outlet context={{ shop }} />
+          <Outlet context={{ shop, permissions: perms }} />
         </div>
 
         {/* Mobile bottom nav */}
         <nav className="md:hidden bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 flex-shrink-0">
           <div className="flex">
-            {BOTTOM_NAV.map((n) => (
+            {bottomNav.map((n) => (
               <button
                 key={n.path}
                 onClick={() => navigate(n.path)}
                 className={`flex-1 flex flex-col items-center py-2.5 transition-all
-                  ${pathname.startsWith(n.path) ? "text-teal-500" : "text-slate-500 dark:text-slate-500"}`}
+                  ${pathname.startsWith(n.path) ? "text-violet-500" : "text-slate-500 dark:text-slate-500"}`}
               >
                 <span className="text-xl">{n.icon}</span>
                 <span className="text-[10px] mt-0.5 font-semibold">
@@ -198,31 +193,26 @@ export default function ShopkeeperLayout() {
       </div>
 
       {/* ── Right Drawer (mobile only) ── */}
-
-      {/* Backdrop */}
       {drawerOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/30 dark:bg-slate-950/60 backdrop-blur-sm md:hidden"
           onClick={() => setDrawerOpen(false)}
         />
       )}
-
-      {/* Drawer panel */}
       <div
         className={`fixed top-0 right-0 z-50 h-full w-72 bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800
           shadow-2xl transition-transform duration-300 ease-in-out md:hidden
           ${drawerOpen ? "translate-x-0" : "translate-x-full"}`}
       >
-        {/* Drawer header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">{emoji}</span>
+            <span className="text-2xl">{shopEmoji}</span>
             <div>
               <div className="text-slate-900 dark:text-white text-sm font-bold truncate max-w-[160px]">
-                {title}
+                {shopName}
               </div>
-              <div className="text-slate-500 dark:text-slate-400 text-xs">
-                {subtitle}
+              <div className="text-violet-500 dark:text-violet-400 text-xs">
+                Staff Panel
               </div>
             </div>
           </div>
@@ -233,20 +223,18 @@ export default function ShopkeeperLayout() {
             <X size={20} />
           </button>
         </div>
-
-        {/* Drawer nav items */}
         <div className="px-3 py-4 space-y-1">
           <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold px-3 mb-2">
             আরও সুবিধা
           </p>
-          {DRAWER_NAV.map((n) => (
+          {drawerNav.map((n) => (
             <button
               key={n.path}
               onClick={() => goTo(n.path)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all
                 ${
                   pathname.startsWith(n.path)
-                    ? "bg-teal-600 text-white"
+                    ? "bg-violet-600 text-white"
                     : "text-slate-600 hover:bg-gray-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
                 }`}
             >
@@ -254,19 +242,6 @@ export default function ShopkeeperLayout() {
               {n.label}
             </button>
           ))}
-        </div>
-
-        {/* Divider + logout at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100 dark:border-slate-800">
-          <button
-            onClick={() => {
-              logout();
-              setDrawerOpen(false);
-            }}
-            className="w-full py-2.5 rounded-xl border border-red-300 dark:border-red-800 text-red-500 dark:text-red-400 font-semibold text-sm hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-          >
-            লগআউট
-          </button>
         </div>
       </div>
     </div>

@@ -5,6 +5,7 @@ import { customerApi, transactionApi } from "../../api";
 import { TransactionItem, PageLoader } from "../../components/shared";
 import { taka, relativeTime, getApiError } from "../../utils/helpers";
 import Modal from "@/components/shared/Modal";
+import { useStaffPermissions } from "../../hooks/useStaffPermissions";
 
 const ROWS = [
   ["AC", "⌫", "%", "÷"],
@@ -29,6 +30,7 @@ export default function CalculatorPage() {
   // custId can be passed from Dashboard or Customers page via navigate state
   const location = useLocation();
   const initCustId = (location.state as any)?.custId || "";
+  const staffPerms = useStaffPermissions();
   const qc = useQueryClient();
 
   const [selId, setSelId] = useState(initCustId);
@@ -43,6 +45,7 @@ export default function CalculatorPage() {
     amount: number;
   } | null>(null);
   const [toast, setToast] = useState("");
+  const [ieAutoLink, setIeAutoLink] = useState(true);
 
   const { data: cr } = useQuery({
     queryKey: ["shopCustomers"],
@@ -66,14 +69,21 @@ export default function CalculatorPage() {
 
   const txnMut = useMutation({
     mutationFn: (d: any) => transactionApi.addTransaction(d),
-    onSuccess: () => {
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["shopCustomers"] });
       qc.invalidateQueries({ queryKey: ["custTxns", selId] });
       qc.invalidateQueries({ queryKey: ["monthlySummary"] });
+      const incomeEntryId = (res?.data as any)?.data?.incomeEntryId;
+      if (incomeEntryId) {
+        qc.invalidateQueries({ queryKey: ["ieEntries"] });
+        qc.invalidateQueries({ queryKey: ["ieSummary"] });
+        showToast("✅ হিসাব সম্পন্ন! আয় খাতায় স্বয়ংক্রিয়ভাবে যোগ হয়েছে");
+      } else {
+        showToast("✅ হিসাব সম্পন্ন!");
+      }
       setConfirm(null);
       pressAC();
       setNote("");
-      showToast("✅ হিসাব সম্পন্ন!");
     },
     onError: (e) => {
       showToast("❌ " + getApiError(e));
@@ -233,26 +243,30 @@ export default function CalculatorPage() {
 
       {/* Baki / Payment buttons */}
       <div className="grid grid-cols-2 gap-3">
-        <button
-          onClick={() => handleSave("BAKI")}
-          className="bg-red-600 hover:bg-red-500 text-white font-bold py-4 rounded-2xl text-sm transition-colors flex items-center justify-center gap-2"
-        >
-          <span className="text-lg">📤</span>
-          <div className="text-left">
-            <div>বাকি দিল</div>
-            <div className="text-xs opacity-70 font-normal">Credit নিয়েছে</div>
-          </div>
-        </button>
-        <button
-          onClick={() => handleSave("PAYMENT")}
-          className="bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 rounded-2xl text-sm transition-colors flex items-center justify-center gap-2"
-        >
-          <span className="text-lg">📥</span>
-          <div className="text-left">
-            <div>টাকা দিল</div>
-            <div className="text-xs opacity-70 font-normal">Payment করেছে</div>
-          </div>
-        </button>
+        {staffPerms.canAddBaki && (
+          <button
+            onClick={() => handleSave("BAKI")}
+            className="bg-red-600 hover:bg-red-500 text-white font-bold py-4 rounded-2xl text-sm transition-colors flex items-center justify-center gap-2"
+          >
+            <span className="text-lg">📤</span>
+            <div className="text-left">
+              <div>বাকি দিল</div>
+              <div className="text-xs opacity-70 font-normal">Credit নিয়েছে</div>
+            </div>
+          </button>
+        )}
+        {staffPerms.canAddPayment && (
+          <button
+            onClick={() => handleSave("PAYMENT")}
+            className="bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 rounded-2xl text-sm transition-colors flex items-center justify-center gap-2"
+          >
+            <span className="text-lg">📥</span>
+            <div className="text-left">
+              <div>টাকা দিল</div>
+              <div className="text-xs opacity-70 font-normal">Payment করেছে</div>
+            </div>
+          </button>
+        )}
       </div>
 
       {/* Confirm modal */}
@@ -292,6 +306,20 @@ export default function CalculatorPage() {
                   <span className="text-slate-900 dark:text-white">{note}</span>
                 </div>
               )}
+              {confirm.type === "PAYMENT" && (
+                <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-slate-700">
+                  <span className="text-slate-500 dark:text-slate-400">
+                    আয় খাতায় যোগ:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIeAutoLink((v) => !v)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${ieAutoLink ? "bg-teal-600" : "bg-gray-300 dark:bg-slate-600"}`}
+                  >
+                    <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${ieAutoLink ? "translate-x-6" : "translate-x-1"}`} />
+                  </button>
+                </div>
+              )}
             </div>
             <div className="flex gap-2">
               <button
@@ -307,6 +335,7 @@ export default function CalculatorPage() {
                     type: confirm.type,
                     amount: confirm.amount,
                     note: note || undefined,
+                    ieAutoLink: confirm.type === "PAYMENT" ? ieAutoLink : undefined,
                   })
                 }
                 disabled={txnMut.isPending}

@@ -1,10 +1,41 @@
 import { useOutletContext } from "react-router-dom";
+import { useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { customerApi } from "../../api";
 import { StatCard } from "../../components/shared";
 import { taka, repLabel } from "../../utils/helpers";
 import FraudStatusSection from "../shopkeeper/FraudStatusSection";
 
 export default function ProfilePage() {
   const { profile } = useOutletContext<{ profile: any }>();
+  const qc = useQueryClient();
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageErr, setImageErr] = useState("");
+
+  const uploadMut = useMutation({
+    mutationFn: (fd: FormData) => customerApi.uploadMyImage(fd),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["myProfile"] });
+      setImageErr("");
+    },
+    onError: (e: any) => {
+      const status = e?.response?.status;
+      if (status === 403) {
+        setImageErr("আপনার বিরুদ্ধে সত্যায়িত প্রতারণা রিপোর্ট থাকায় স্নাতক পরিবর্তন করা যাচ্ছে না।");
+      } else {
+        setImageErr("স্নাতক আপুডেট হয়নি। আবার চেষ্টা করুন।");
+      }
+    },
+  });
+
+  const handleImageSelect = (file: File) => {
+    setImageUploading(true);
+    const fd = new FormData();
+    fd.append("image", file);
+    uploadMut.mutate(fd, { onSettled: () => setImageUploading(false) });
+  };
+
   if (!profile) return null;
 
   const shops = profile.shops || [];
@@ -23,9 +54,36 @@ export default function ProfilePage() {
     <div className="p-4 space-y-4 animate-fade-in">
       {/* Profile card */}
       <div className="bg-gradient-to-br from-slate-100 to-teal-50 dark:from-slate-800 dark:to-teal-950 border border-teal-200 dark:border-teal-900/40 rounded-2xl p-5 text-center">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-600 to-teal-800 flex items-center justify-center text-4xl font-bold text-white mx-auto mb-3">
-          {profile.name?.charAt(0)}
+        <div className="relative inline-block mb-3">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-600 to-teal-800 flex items-center justify-center text-4xl font-bold text-white overflow-hidden">
+            {profile.image ? (
+              <img src={profile.image} alt="" className="w-full h-full object-cover" />
+            ) : (
+              profile.name?.charAt(0)
+            )}
+          </div>
+          <button
+            onClick={() => imageInputRef.current?.click()}
+            disabled={imageUploading}
+            className="absolute -bottom-1 -right-1 w-7 h-7 bg-teal-500 rounded-full flex items-center justify-center shadow text-white"
+          >
+            {imageUploading ? (
+              <span className="text-[10px]">...</span>
+            ) : (
+              <span className="text-sm">📷</span>
+            )}
+          </button>
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageSelect(f); }}
+          />
         </div>
+        {imageErr && (
+          <p className="text-xs text-red-500 mb-2 px-4">{imageErr}</p>
+        )}
         <div className="text-slate-900 dark:text-white text-xl font-extrabold">
           {profile.name}
         </div>

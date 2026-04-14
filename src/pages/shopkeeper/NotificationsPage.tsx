@@ -11,6 +11,9 @@ const ICONS: Record<TNotificationType, string> = {
   SHOP_VERIFIED: "✅",
   REFERRAL_REWARD: "🎁",
   SYSTEM: "ℹ️",
+  NEW_CAMPAIGN_SUBSCRIPTION: "📢",
+  CAMPAIGN_CONFIRMED: "✅",
+  CAMPAIGN_REJECTED: "❌",
 };
 
 export default function NotificationsPage() {

@@ -184,9 +184,9 @@ export default function DashboardPage() {
                 >
                   {/* Avatar */}
                   <div className="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-950/60 flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold text-lg flex-shrink-0 overflow-hidden">
-                    {c.avatar ? (
+                    {c.image ? (
                       <img
-                        src={c.avatar}
+                        src={c.image}
                         alt={c.name}
                         className="w-full h-full object-cover"
                       />

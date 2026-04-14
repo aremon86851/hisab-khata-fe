@@ -26,7 +26,8 @@ export const authApi = {
   getMyProfile: () => axiosPrivate.get("/auth/me"),
    changePin: (d: { currentPin: string; newPin: string }) =>
     axiosPrivate.post("/auth/change-pin", d),
-  deleteAccount: () => axiosPrivate.delete("/auth/account"),
+  deleteAccount: (d: { password: string }) =>
+    axiosPrivate.delete("/auth/account", { data: d }),
 };
 
 // ── Shop ──────────────────────────────────────────────────────────────────────
@@ -50,6 +51,21 @@ export const customerApi = {
     axiosPrivate.patch(`/customers/${id}/rate`, { rating }),
   toggleBlock: (id: string) => axiosPrivate.patch(`/customers/${id}/block`),
   getMyProfile: () => axiosPrivate.get("/customers/me"),
+  // 1a: Customer uploads own photo
+  uploadMyImage: (formData: FormData) => axiosPrivate.patch("/customers/me/image", formData),
+  // 1b: Shopkeeper uploads customer photo
+  uploadCustomerImage: (customerId: string, formData: FormData) =>
+    axiosPrivate.patch(`/customers/${customerId}/image`, formData),
+  // 2: Fraud pre-check by mobile
+  checkMobile: (mobile: string) =>
+    axiosPrivate.get("/customers/check", { params: { mobile } }),
+  // 3: Unlink customer from shop
+  unlinkCustomer: (customerId: string) => axiosPrivate.delete(`/customers/${customerId}`),
+  // 4: Settle customer
+  settleCustomer: (customerId: string) => axiosPrivate.patch(`/customers/${customerId}/settle`),
+  // 5: Toggle transaction request access
+  toggleRequestAccess: (customerId: string) =>
+    axiosPrivate.patch(`/customers/${customerId}/request-access`),
 };
 
 // ── Transaction ───────────────────────────────────────────────────────────────
@@ -59,20 +75,34 @@ export const transactionApi = {
     type: string;
     amount: number;
     note?: string;
+    ieAutoLink?: boolean;
   }) => axiosPrivate.post("/transactions", d),
   getShopTransactions: (params?: object) =>
     axiosPrivate.get("/transactions", { params }),
   getCustomerShopTxn: (ssc: string, csc: string, params?: object) =>
     axios.get(
       `${import.meta.env.VITE_API_URL}/transactions/txn/${ssc}/${csc}`,
-      {
-        params,
-      },
+      { params },
     ),
   getMyTransactions: (params?: object) =>
     axiosPrivate.get("/transactions/my", { params }),
   getMonthlySummary: (year?: number, month?: number) =>
     axiosPrivate.get("/transactions/summary", { params: { year, month } }),
+  // 6a: Customer submits payment request
+  submitRequest: (d: { shopId: string; type: "BAKI" | "PAYMENT"; amount: number; note?: string }) =>
+    axiosPrivate.post("/transactions/requests", d),
+  // 6b: Customer views own requests
+  getMyRequests: (params?: object) =>
+    axiosPrivate.get("/transactions/requests/my", { params }),
+  // 6c: Shopkeeper views incoming requests
+  getShopRequests: (params?: object) =>
+    axiosPrivate.get("/transactions/requests", { params }),
+  // 6d: Shopkeeper approves request
+  approveRequest: (requestId: string) =>
+    axiosPrivate.patch(`/transactions/requests/${requestId}/approve`),
+  // 6e: Shopkeeper rejects request
+  rejectRequest: (requestId: string, reviewNote?: string) =>
+    axiosPrivate.patch(`/transactions/requests/${requestId}/reject`, { reviewNote }),
 };
 
 // ── Product ───────────────────────────────────────────────────────────────────
@@ -109,11 +139,12 @@ export const ieApi = {
 // ── Staff ─────────────────────────────────────────────────────────────────────
 export const staffApi = {
   getStaff: () => axiosPrivate.get("/staff"),
+  getMe: () => axiosPrivate.get("/auth/me"),
   addStaff: (d: object) => axiosPrivate.post("/staff", d),
   updateStaff: (id: string, d: object) => axiosPrivate.patch(`/staff/${id}`, d),
   removeStaff: (id: string) => axiosPrivate.delete(`/staff/${id}`),
-  resetPin: (id: string, pin: string) =>
-    axiosPrivate.post(`/staff/${id}/reset-pin`, { pin }),
+  resetPin: (id: string, newPin: string) =>
+    axiosPrivate.post(`/staff/${id}/reset-pin`, { newPin }),
 };
 
 // ── Notification ──────────────────────────────────────────────────────────────
@@ -178,4 +209,55 @@ export const fraudApi = {
   // Customer: dispute a report
   dispute: (reportId: string, reason: string) =>
     axiosPrivate.post(`/fraud/${reportId}/dispute`, { reason }),
+};
+
+// ── Reports ───────────────────────────────────────────────────────────────────
+export const reportsApi = {
+  // 7a: Outstanding baki report
+  getOutstanding: (params?: object) =>
+    axiosPrivate.get("/reports/outstanding", { params }),
+  // 7b: Customer ledger
+  getLedger: (customerId: string, params?: object) =>
+    axiosPrivate.get(`/reports/ledger/${customerId}`, { params }),
+  // 7c: Monthly P&L
+  getMonthly: (year?: number, month?: number) =>
+    axiosPrivate.get("/reports/monthly", { params: { year, month } }),
+  // 7d: Top debtors
+  getTopDebtors: (limit = 10) =>
+    axiosPrivate.get("/reports/top-debtors", { params: { limit } }),
+};
+
+// ── Campaign ──────────────────────────────────────────────────────────────────
+export const campaignApi = {
+  // Shopkeeper: CRUD
+  getAll: (params?: object) =>
+    axiosPrivate.get("/campaigns", { params }),
+  getById: (id: string) =>
+    axiosPrivate.get(`/campaigns/${id}`),
+  create: (d: object) =>
+    axiosPrivate.post("/campaigns", d),
+  update: (id: string, d: object) =>
+    axiosPrivate.patch(`/campaigns/${id}`, d),
+  remove: (id: string) =>
+    axiosPrivate.delete(`/campaigns/${id}`),
+
+  // Shopkeeper: manage subscriptions
+  getSubscriptions: (campaignId: string, params?: object) =>
+    axiosPrivate.get(`/campaigns/${campaignId}/subscriptions`, { params }),
+  reviewSubscription: (campaignId: string, subId: string, d: { status: string; reviewNote?: string }) =>
+    axiosPrivate.patch(`/campaigns/${campaignId}/subscriptions/${subId}`, d),
+  notifySubscribers: (campaignId: string, d?: { channel?: string; customMessage?: string }) =>
+    axiosPrivate.post(`/campaigns/${campaignId}/notify`, d),
+
+  // Customer: browse by shop & subscribe
+  browseShop: (shopId: string, params?: object) =>
+    axiosPrivate.get(`/campaigns/shop/${shopId}`, { params }),
+  getPublic: (id: string) =>
+    axiosPrivate.get(`/campaigns/${id}/public`),
+  subscribe: (campaignId: string, note?: string) =>
+    axiosPrivate.post(`/campaigns/${campaignId}/subscribe`, note ? { note } : {}),
+  cancelSubscription: (campaignId: string) =>
+    axiosPrivate.delete(`/campaigns/${campaignId}/subscribe`),
+  mySubscriptions: (params?: object) =>
+    axiosPrivate.get("/campaigns/my", { params }),
 };

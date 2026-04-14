@@ -6,7 +6,7 @@ export type TReminderChannel    = 'WHATSAPP' | 'SMS' | 'BOTH';
 export type TReminderStatus     = 'SCHEDULED' | 'SENT' | 'FAILED';
 export type TStaffRole          = 'OWNER' | 'MANAGER' | 'STAFF';
 export type TEntryType          = 'INCOME' | 'EXPENSE';
-export type TNotificationType   = 'NEW_BAKI' | 'PAYMENT_RECEIVED' | 'REMINDER_SENT' | 'SHOP_VERIFIED' | 'REFERRAL_REWARD' | 'SYSTEM';
+export type TNotificationType   = 'NEW_BAKI' | 'PAYMENT_RECEIVED' | 'REMINDER_SENT' | 'SHOP_VERIFIED' | 'REFERRAL_REWARD' | 'SYSTEM' | 'NEW_CAMPAIGN_SUBSCRIPTION' | 'CAMPAIGN_CONFIRMED' | 'CAMPAIGN_REJECTED';
 
 export type TApiResponse<T> = {
   success: boolean; statusCode: number; message: string; data: T;
@@ -41,15 +41,27 @@ export type TCustomer = {
   shopRating: number; isBlocked: boolean; lastTransactAt: string | null; createdAt: string;
 };
 
+export type TFraudRiskLevel = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH';
+
+export type TTransactionRequest = {
+  id: string; shopId: string; customerId: string; linkId: string;
+  type: 'PAYMENT'; amount: number; note: string | null;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  reviewNote: string | null; reviewedAt: string | null; reviewedById: string | null;
+  createdAt: string;
+  customer?: { id: string; name: string; mobile: string; image?: string };
+};
+
 export type TCustomerShopLink = {
   id: string; name: string; emoji: string; shopType: string | null;
   balance: number; shopRating: number;
+  canRequestTxn?: boolean; isSettled?: boolean; settledAt?: string | null;
   verification: { status: TVerificationStatus; logoUrl: string | null; district: string | null } | null;
   products: TProduct[];
 };
 
 export type TCustomerProfile = {
-  id: string; name: string; mobile: string; createdAt: string;
+  id: string; name: string; mobile: string; image?: string; createdAt: string;
   shops: TCustomerShopLink[]; repScore: string;
 };
 
@@ -78,6 +90,9 @@ export type TReminderSettings = {
 export type TIncomeExpenseEntry = {
   id: string; shopId: string; type: TEntryType; amount: number;
   category: string; note: string | null; entryDate: string; createdAt: string;
+  transactionId?: string | null;
+  isAutoLinked?: boolean;
+  customer?: { id: string; name: string; mobile: string } | null;
 };
 
 export type TIEMonthlySummary = {
@@ -100,4 +115,55 @@ export type TNotification = {
 export type TDashboardStats = {
   totalShops: number; verifiedShops: number; totalCustomers: number;
   totalTransactions: number; totalOutstandingBaki: number; recentTransactions: TTransaction[];
+};
+
+// ── Campaign ──────────────────────────────────────────────────────────────────
+export type TCampaignType = 'MONTHLY_PACKAGE' | 'DISCOUNT' | 'CUSTOM' | 'CATALOG';
+export type TDiscountType = 'PERCENTAGE' | 'FLAT';
+export type TCampaignTarget = 'ALL' | 'SPECIFIC';
+export type TCampaignStatus = 'active' | 'upcoming' | 'expired';
+export type TCampaignSubStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED';
+
+export type TCampaignItem = {
+  id: string;
+  campaignId: string;
+  productId: string | null;
+  name: string;
+  quantity: number;
+  unit: string;
+  price: number;
+};
+
+export type TCampaign = {
+  id: string;
+  shopId: string;
+  type: TCampaignType;
+  title: string;
+  description: string | null;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  discountType: TDiscountType | null;
+  discountValue: number | null;
+  targetCustomers: TCampaignTarget;
+  createdAt: string;
+  updatedAt: string;
+  items: TCampaignItem[];
+  shop?: { id: string; name: string; emoji: string };
+  status?: TCampaignStatus;
+  subscriberCount?: number;
+  pendingCount?: number;
+};
+
+export type TCampaignSubscription = {
+  id: string;
+  campaignId: string;
+  customerId: string;
+  status: TCampaignSubStatus;
+  note: string | null;
+  reviewNote: string | null;
+  joinedAt: string;
+  reviewedAt: string | null;
+  customer?: { id: string; name: string; mobile: string; image?: string | null };
+  campaign?: TCampaign;
 };

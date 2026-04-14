@@ -114,7 +114,7 @@ export default function SettingsPage() {
     setImageUploading(true);
     try {
       const fd = new FormData();
-      fd.append("shopImage", file);
+      fd.append("image", file);
       await shopApi.uploadImage(fd);
       qc.invalidateQueries({ queryKey: ["myShop"] });
     } catch {
@@ -148,9 +148,10 @@ export default function SettingsPage() {
 
   // Delete account
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
 
   const deleteMut = useMutation({
-    mutationFn: () => authApi.deleteAccount(),
+    mutationFn: () => authApi.deleteAccount({ password: deletePassword }),
     onSuccess: () => {
       logout();
       navigate("/login");
@@ -675,16 +676,23 @@ export default function SettingsPage() {
             <p className="text-sm text-gray-500 dark:text-slate-400">
               এই অ্যাকশন পূর্বাবস্থায় ফেরানো যাবে না। আপনার দোকান এবং সমস্ত ডেটা নিষ্ক্রিয় হয়ে যাবে।
             </p>
+            <input
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              placeholder="পাসওয়ার্ড দিন"
+              className="w-full bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white outline-none focus:border-red-400"
+            />
             <div className="flex gap-3">
               <button
-                onClick={() => setShowDeleteConfirm(false)}
+                onClick={() => { setShowDeleteConfirm(false); setDeletePassword(""); }}
                 className="flex-1 py-3 border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 font-bold rounded-xl text-sm"
               >
                 বাতিল করুন
               </button>
               <button
                 onClick={() => deleteMut.mutate()}
-                disabled={deleteMut.isPending}
+                disabled={deleteMut.isPending || !deletePassword}
                 className="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl text-sm disabled:opacity-60"
               >
                 {deleteMut.isPending ? "মুছছে..." : "হ্যাঁ, মুছুন"}

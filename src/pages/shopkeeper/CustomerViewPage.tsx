@@ -7,13 +7,19 @@ import {
   ArrowDownLeft,
   Plus,
   ShieldAlert,
+  Camera,
+  UserMinus,
+  CheckCircle2,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { customerApi, transactionApi, fraudApi } from "@/api";
 import CustomerViewSkeleton from "@/components/CustomerViewSkeleton";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Modal } from "@/components/shared";
 import ReminderModal from "@/components/RemainderModal";
+import { useBasePath } from "@/hooks/useBasePath";
+import { useStaffPermissions } from "@/hooks/useStaffPermissions";
+import { useAuth } from "@/hooks/useAuth";
 import { getApiError } from "@/utils/helpers";
 
 const FRAUD_TYPES = [
@@ -27,8 +33,46 @@ const FRAUD_TYPES = [
 const CustomerViewPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const basePath = useBasePath();
+  const staffPerms = useStaffPermissions();
+  const { role } = useAuth();
   const qc = useQueryClient();
+  const isShopkeeper = role === "SHOPKEEPER";
   const [isOpenReminder, setIsOpenRemainder] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [showUnlink, setShowUnlink] = useState(false);
+
+  // Photo upload (1b: shopkeeper uploads customer photo)
+  const handleCustomerImageUpload = async (file: File) => {
+    setImageUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      await customerApi.uploadCustomerImage(customer?.customer?.id!, fd);
+      qc.invalidateQueries({ queryKey: ["shopCustomers", id] });
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const unlinkMut = useMutation({
+    mutationFn: () => customerApi.unlinkCustomer(id!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["shopCustomers"] });
+      navigate(`${basePath}/customers`);
+    },
+  });
+
+  const settleMut = useMutation({
+    mutationFn: () => customerApi.settleCustomer(id!),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["shopCustomers", id] }),
+  });
+
+  const requestAccessMut = useMutation({
+    mutationFn: () => customerApi.toggleRequestAccess(id!),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["shopCustomers", id] }),
+  });
 
   // Fraud report state
   const [showFraudModal, setShowFraudModal] = useState(false);
@@ -108,8 +152,30 @@ const CustomerViewPage = () => {
       <div className="space-y-4">
         {/* Header */}
         <div className="flex flex-col items-center text-center space-y-2">
-          <div className="text-2xl font-bold text-slate-200 flex items-center justify-center rounded-full bg-green-600 w-16 h-16">
-            {customer?.customer?.name.charAt(0)}
+          <div className="relative">
+            <div className="text-2xl font-bold text-slate-200 flex items-center justify-center rounded-full bg-green-600 w-16 h-16 overflow-hidden">
+              {customer?.customer?.image ? (
+                <img src={customer.customer.image} alt="" className="w-full h-full object-cover" />
+              ) : (
+                customer?.customer?.name.charAt(0)
+              )}
+            </div>
+            {isShopkeeper && (
+              <button
+                onClick={() => imageInputRef.current?.click()}
+                disabled={imageUploading}
+                className="absolute -bottom-1 -right-1 w-6 h-6 bg-teal-500 rounded-full flex items-center justify-center shadow"
+              >
+                <Camera size={11} className="text-white" />
+              </button>
+            )}
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCustomerImageUpload(f); }}
+            />
           </div>
 
           <h2 className="font-semibold text-lg text-slate-900 dark:text-white ">
@@ -142,22 +208,41 @@ const CustomerViewPage = () => {
 
         {/* Actions */}
         <div className="flex gap-2">
-          <button
-            className="flex items-center justify-center gap-1 flex-1 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white rounded-lg py-2 text-sm transition"
-            onClick={() => setIsOpenRemainder(true)}
-          >
-            <MessageSquare size={16} />
-            রিমাইন্ডার
-          </button>
+          {staffPerms.canSendReminder && (
+            <button
+              className="flex items-center justify-center gap-1 flex-1 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white rounded-lg py-2 text-sm transition"
+              onClick={() => setIsOpenRemainder(true)}
+            >
+              <MessageSquare size={16} />
+              রিমাইন্ডার
+            </button>
+          )}
 
           <button
-            onClick={() => window.open(`tel:${customer?.mobile}`)}
+            onClick={() => window.open(`tel:${customer?.customer?.mobile}`)}
             className="flex items-center justify-center gap-1 flex-1 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white rounded-lg py-2 text-sm transition"
           >
             <Phone size={16} />
             কল
           </button>
         </div>
+
+        {/* Request Access Toggle (Section 5) - Shopkeeper only */}
+        {isShopkeeper && (
+          <div className="bg-white dark:bg-slate-800 rounded-xl px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-800 dark:text-white">পেমেন্ট অনুরোধের সুবিধা</p>
+              <p className="text-xs text-slate-500">{customer?.canRequestTxn ? "কাস্টমার পেমেন্ট অনুরোধ পাঠাতে পারবে" : "কাস্টমার অনুরোধ পাঠাতে পারবে না"}</p>
+            </div>
+            <button
+              onClick={() => requestAccessMut.mutate()}
+              disabled={requestAccessMut.isPending}
+              className={`relative w-12 h-6 rounded-full transition-colors duration-200 ${customer?.canRequestTxn ? "bg-teal-500" : "bg-gray-200 dark:bg-slate-600"}`}
+            >
+              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${customer?.canRequestTxn ? "left-7" : "left-1"}`} />
+            </button>
+          </div>
+        )}
 
         {/* Transactions Header */}
         <div className="flex justify-between items-center text-sm font-medium">
@@ -198,29 +283,68 @@ const CustomerViewPage = () => {
         </div>
 
         {/* Add Button */}
-        <button
-          className="w-full bg-teal-500 hover:bg-teal-400 text-black font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition"
-          onClick={() =>
-            navigate("/shopkeeper/calculator", {
-              state: { custId: id },
-            })
-          }
-        >
-          <Plus size={18} />
-          হিসাব করুন
-        </button>
+        {(staffPerms.canAddBaki || staffPerms.canAddPayment) && (
+          <button
+            className="w-full bg-teal-500 hover:bg-teal-400 text-black font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition"
+            onClick={() =>
+              navigate(`${basePath}/calculator`, {
+                state: { custId: id },
+              })
+            }
+          >
+            <Plus size={18} />
+            হিসাব করুন
+          </button>
+        )}
 
-        {/* Report Fraud */}
-        <button
-          onClick={() => {
-            setFraudAmount(String(customer?.balance ?? ""));
-            setShowFraudModal(true);
-          }}
-          className="w-full border border-red-300 dark:border-red-800 text-red-500 dark:text-red-400 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold hover:bg-red-50 dark:hover:bg-red-950/30 transition"
-        >
-          <ShieldAlert size={16} />
-          প্রতারক হিসেবে রিপোর্ট করুন
-        </button>
+        {/* Settle button (Section 4) - shopkeeper only, when balance===0 and not settled */}
+        {isShopkeeper && customer?.balance === 0 && !customer?.isSettled && (
+          <button
+            onClick={() => settleMut.mutate()}
+            disabled={settleMut.isPending}
+            className="w-full border border-teal-400 dark:border-teal-700 text-teal-600 dark:text-teal-400 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold hover:bg-teal-50 dark:hover:bg-teal-950/30 transition disabled:opacity-60"
+          >
+            <CheckCircle2 size={16} />
+            {settleMut.isPending ? "সেটল হচ্ছে..." : "হিসাব সমাপ্ত প্রতিপাদন করুন"}
+          </button>
+        )}
+
+        {isShopkeeper && customer?.isSettled && (
+          <div className="flex items-center justify-center gap-2 py-2 text-teal-600 dark:text-teal-400 text-sm">
+            <CheckCircle2 size={16} />
+            <span className="font-semibold">হিসাব সমাপ্ত</span>
+            {customer?.settledAt && (
+              <span className="text-slate-400 text-xs">• {new Date(customer.settledAt).toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" })}</span>
+            )}
+          </div>
+        )}
+
+        {/* Report Fraud - Shopkeeper only */}
+        {isShopkeeper && (
+          <button
+            onClick={() => {
+              setFraudAmount(String(customer?.balance ?? ""));
+              setShowFraudModal(true);
+            }}
+            className="w-full border border-red-300 dark:border-red-800 text-red-500 dark:text-red-400 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold hover:bg-red-50 dark:hover:bg-red-950/30 transition"
+          >
+            <ShieldAlert size={16} />
+            প্রতারক হিসেবে রিপোর্ট করুন
+          </button>
+        )}
+
+        {/* Unlink customer (Section 3) - Shopkeeper only */}
+        {isShopkeeper && (
+          <button
+            onClick={() => customer?.balance > 0 ? undefined : setShowUnlink(true)}
+            disabled={customer?.balance > 0}
+            title={customer?.balance > 0 ? "বাকি প্রথমে পরিশোধ করুন" : ""}
+            className="w-full border border-gray-200 dark:border-slate-700 text-gray-400 dark:text-slate-500 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-slate-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <UserMinus size={16} />
+            {customer?.balance > 0 ? "বাকি শেষ করুন (Remove সক্ষম)" : "Customer সরিয়ে দিন"}
+          </button>
+        )}
       </div>
       {isOpenReminder && (
         <Modal
@@ -230,6 +354,30 @@ const CustomerViewPage = () => {
         >
           <ReminderModal customer={customer} />
         </Modal>
+      )}
+
+      {/* Unlink Confirmation */}
+      {showUnlink && (
+        <div className="fixed inset-0 bg-black/60 dark:bg-slate-950/80 z-50 flex items-center justify-center px-4">
+          <div className="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <UserMinus className="w-6 h-6 text-red-500" />
+              <h3 className="font-bold text-gray-800 dark:text-white">{customer?.customer?.name} কে সরিয়ে দিতে চান?</h3>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-slate-400">এই Customer আপনার দোকানের সাথে সংযোগ বিচ্ছিন্ন হবে।</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowUnlink(false)}
+                className="flex-1 py-3 border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 font-bold rounded-xl text-sm"
+              >বাতিল</button>
+              <button
+                onClick={() => unlinkMut.mutate()}
+                disabled={unlinkMut.isPending}
+                className="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl text-sm disabled:opacity-60"
+              >{unlinkMut.isPending ? "হচ্ছে..." : "হ্যাঁ, সরিয়ে দিন"}</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Fraud Report Modal */}

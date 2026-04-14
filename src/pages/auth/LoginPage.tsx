@@ -7,7 +7,15 @@ import { getApiError } from "../../utils/helpers";
 import { Input, Button, PinInput } from "../../components/shared";
 import type { TRole } from "../../types";
 
-type TPageRole = "shopkeeper" | "customer" | "admin";
+type TPageRole = "shopkeeper" | "customer" | "admin" | "staff";
+
+const getStatusCode = (error: unknown): number => {
+  if (error && typeof error === "object" && "response" in error) {
+    const e = error as { response?: { status?: number } };
+    return e.response?.status ?? 0;
+  }
+  return 0;
+};
 
 export default function LoginPage() {
   const [pageRole, setPageRole] = useState<TPageRole | null>(null);
@@ -22,20 +30,37 @@ export default function LoginPage() {
 
   const onSuccess = (data: any) => {
     const d = data.data.data;
-    console.log(data);
-    login(d.accessToken, d.role as TRole, d.shopId);
+    const perms = d.permissions ?? null;
+    login(d.accessToken, d.role as TRole, d.shopId, undefined, perms);
     navigate(
-      d.role === "SHOPKEEPER" || d.role === "STAFF"
+      d.role === "SHOPKEEPER"
         ? "/shopkeeper"
-        : d.role === "CUSTOMER"
-          ? "/customer"
-          : "/admin",
+        : d.role === "STAFF"
+          ? "/staff/dashboard"
+          : d.role === "CUSTOMER"
+            ? "/customer"
+            : "/admin",
     );
   };
-  const onError = (e: unknown) => setError(getApiError(e));
+  const onError = (e: unknown) => {
+    const status = getStatusCode(e);
+    if (pageRole === "staff") {
+      if (status === 401) setError("মোবাইল নম্বর বা পিন ভুল।");
+      else if (status === 403)
+        setError("আপনার অ্যাকাউন্ট নিষ্ক্রিয়। দোকানদারের সাথে যোগাযোগ করুন।");
+      else setError(getApiError(e));
+    } else {
+      setError(getApiError(e));
+    }
+  };
 
   const pinMut = useMutation({
     mutationFn: () => authApi.loginWithPin({ mobile, pin, role: pageRole! }),
+    onSuccess,
+    onError,
+  });
+  const staffMut = useMutation({
+    mutationFn: () => authApi.loginWithPin({ mobile, pin, role: "staff" }),
     onSuccess,
     onError,
   });
@@ -50,12 +75,16 @@ export default function LoginPage() {
     onError,
   });
 
-  const loading = pinMut.isPending || passMut.isPending || admMut.isPending;
+  const loading = pinMut.isPending || passMut.isPending || admMut.isPending || staffMut.isPending;
 
   const handleLogin = () => {
     setError("");
     if (pageRole === "admin") {
       admMut.mutate();
+      return;
+    }
+    if (pageRole === "staff") {
+      staffMut.mutate();
       return;
     }
     if (mode === "pin") pinMut.mutate();
@@ -110,6 +139,20 @@ export default function LoginPage() {
             ))}
           </div>
           <button
+            onClick={() => setPageRole("staff")}
+            className="w-full bg-white dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 hover:border-violet-500 rounded-2xl p-4 text-center transition-all hover:scale-105 active:scale-95 shadow-sm dark:shadow-none mb-3 flex items-center justify-center gap-3"
+          >
+            <span className="text-3xl">👷</span>
+            <div className="text-left">
+              <div className="text-slate-900 dark:text-white font-bold text-base">
+                স্টাফ লগইন
+              </div>
+              <div className="text-slate-500 dark:text-slate-400 text-xs">
+                Staff Login
+              </div>
+            </div>
+          </button>
+          <button
             onClick={() => setPageRole("admin")}
             className="w-full text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs py-2 transition-colors"
           >
@@ -135,7 +178,9 @@ export default function LoginPage() {
                   ? "🏪"
                   : pageRole === "customer"
                     ? "👤"
-                    : "🛡️"}
+                    : pageRole === "staff"
+                      ? "👷"
+                      : "🛡️"}
               </span>
               <div>
                 <div className="text-slate-900 dark:text-white font-bold">
@@ -143,7 +188,9 @@ export default function LoginPage() {
                     ? "দোকানদার Login"
                     : pageRole === "customer"
                       ? "Customer Login"
-                      : "Admin Login"}
+                      : pageRole === "staff"
+                        ? "স্টাফ লগইন"
+                        : "Admin Login"}
                 </div>
                 <div className="text-slate-500 dark:text-slate-400 text-xs">
                   আপনার তথ্য দিন
@@ -190,7 +237,9 @@ export default function LoginPage() {
                     ))}
                   </div>
                 )}
-                {mode === "password" ? (
+                {pageRole === "staff" || mode === "pin" ? (
+                  <PinInput value={pin} onChange={setPin} label="PIN দিন" />
+                ) : (
                   <Input
                     label="Password"
                     value={password}
@@ -198,8 +247,6 @@ export default function LoginPage() {
                     type="password"
                     placeholder="••••••••"
                   />
-                ) : (
-                  <PinInput value={pin} onChange={setPin} label="PIN দিন" />
                 )}
               </div>
             )}
@@ -223,7 +270,7 @@ export default function LoginPage() {
             </Button>
 
             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-slate-700 space-y-2 text-center">
-              {pageRole !== "admin" && (
+              {pageRole !== "admin" && pageRole !== "staff" && (
                 <Link
                   to="/signup"
                   className="block text-teal-600 dark:text-teal-400 text-xs hover:underline"
@@ -231,12 +278,19 @@ export default function LoginPage() {
                   নতুন account? এখনই যোগ দিন →
                 </Link>
               )}
-              <button
-                onClick={() => navigate("/forgot-pin")}
-                className="text-slate-500 text-xs hover:text-slate-700 dark:hover:text-slate-300"
-              >
-                PIN ভুলে গেছেন?
-              </button>
+              {pageRole !== "admin" && pageRole !== "staff" && (
+                <button
+                  onClick={() => navigate("/forgot-pin")}
+                  className="text-slate-500 text-xs hover:text-slate-700 dark:hover:text-slate-300"
+                >
+                  PIN ভুলে গেছেন?
+                </button>
+              )}
+              {pageRole === "staff" && (
+                <p className="text-slate-500 dark:text-slate-400 text-xs">
+                  PIN ভুলে গেলে আপনার দোকানদারের সাথে যোগাযোগ করুন।
+                </p>
+              )}
             </div>
           </div>
         </div>

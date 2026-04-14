@@ -7,6 +7,7 @@ import { PageLoader } from "../../components/shared";
 const NAV = [
   { path: "/customer/home", icon: "🏠", label: "Home" },
   { path: "/customer/shops", icon: "🏪", label: "আমার দোকান" },
+  { path: "/customer/campaigns", icon: "📢", label: "ক্যাম্পেইন" },
   { path: "/customer/profile", icon: "👤", label: "Profile" },
 ];
 

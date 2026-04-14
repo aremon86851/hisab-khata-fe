@@ -144,9 +144,21 @@ export default function IncomeExpensePage() {
               ${e.type === "INCOME" ? "border-l-teal-500" : "border-l-red-500"}`}
           >
             <div className="flex-1">
-              <div className="text-slate-900 dark:text-white text-sm font-semibold">
-                {e.category}
+              <div className="flex items-center gap-2">
+                <div className="text-slate-900 dark:text-white text-sm font-semibold">
+                  {e.category}
+                </div>
+                {e.isAutoLinked && (
+                  <span className="text-[10px] bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 px-1.5 py-0.5 rounded-full font-semibold">
+                    🔗 স্বয়ংক্রিয়
+                  </span>
+                )}
               </div>
+              {e.customer?.name && (
+                <div className="text-teal-600 dark:text-teal-400 text-xs font-medium">
+                  👤 {e.customer.name}
+                </div>
+              )}
               {e.note && <div className="text-slate-400 text-xs">{e.note}</div>}
               <div className="text-slate-500 text-xs">
                 {new Date(e.entryDate).toLocaleDateString("bn-BD")}
@@ -157,12 +169,14 @@ export default function IncomeExpensePage() {
             >
               {taka(e.amount)}
             </div>
-            <button
-              onClick={() => delMut.mutate(e.id)}
-              className="text-slate-600 hover:text-red-400 text-xs ml-1"
-            >
-              ✕
-            </button>
+            {!e.isAutoLinked && (
+              <button
+                onClick={() => delMut.mutate(e.id)}
+                className="text-slate-600 hover:text-red-400 text-xs ml-1"
+              >
+                ✕
+              </button>
+            )}
           </div>
         ))}
       </div>
