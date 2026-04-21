@@ -1,4 +1,4 @@
-# HisabKhata Frontend
+# HisabKhata
 
 React + Vite + TypeScript + TailwindCSS + React Query
 
