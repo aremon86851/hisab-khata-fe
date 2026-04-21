@@ -1,6 +1,6 @@
 # HisabKhata
 
-React + Vite + TypeScript + TailwindCSS + React Query
+React + Vite + TypeScript + TailwindCSS + React Query (Updated)
 
 ---
 
